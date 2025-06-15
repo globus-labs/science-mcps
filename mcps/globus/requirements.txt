@@ -1,4 +1,3 @@
-mcp
-globus-sdk
-asyncio
+fastmcp
 globus-compute-sdk
+globus-sdk

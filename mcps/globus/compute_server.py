@@ -1,167 +1,29 @@
-# compute-server.py
+"""FastMCP server exposing Globus Compute functionality via Globus Compute SDK."""
+
 import asyncio
 import logging
 import os
-from typing import Any, Optional, Dict, List
+from typing import Dict, Optional
+
 import globus_compute_sdk
 import globus_sdk
-
-from mcp.server.models import InitializationOptions
-import mcp.types as types
-from mcp.server import NotificationOptions, Server
-import mcp.server.stdio
-
-from globus_sdk.scopes import AuthScopes
-
+from fastmcp import FastMCP
 from globus_compute_sdk.sdk.login_manager import AuthorizerLoginManager
 from globus_compute_sdk.sdk.login_manager.manager import ComputeScopeBuilder
+from globus_sdk.scopes import AuthScopes
 
+logger = logging.getLogger(__name__)
+CLIENT_ID = os.getenv("GLOBUS_CLIENT_ID", "ee05bbfa-2a1a-4659-95df-ed8946e3aae6")
 
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger("globus-compute-mcp")
+mcp = FastMCP("Globus Transfer Bridge")
 
 # Global variables
 compute_client: Optional[globus_compute_sdk.Client] = None
 auth_client: Optional[globus_sdk.NativeAppAuthClient] = None
 registered_functions: Dict[str, str] = {}
 
-# Get client ID from environment
-CLIENT_ID = os.getenv("GLOBUS_CLIENT_ID", "ee05bbfa-2a1a-4659-95df-ed8946e3aae6")
 
-# Create server instance
-server = Server("globus-compute-mcp")
-
-
-@server.list_tools()
-async def handle_list_tools() -> list[types.Tool]:
-    """List available tools"""
-    return [
-        types.Tool(
-            name="compute_authenticate",
-            description="Authenticate with Globus Compute",
-            inputSchema={"type": "object", "properties": {}, "required": []},
-        ),
-        types.Tool(
-            name="complete_compute_auth",
-            description="Complete authentication with auth code",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "auth_code": {"type": "string", "description": "Authorization code"}
-                },
-                "required": ["auth_code"],
-            },
-        ),
-        types.Tool(
-            name="register_function",
-            description="Register a Python function",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "function_code": {
-                        "type": "string",
-                        "description": "Python function code",
-                    },
-                    "function_name": {"type": "string", "description": "Function name"},
-                    "description": {
-                        "type": "string",
-                        "description": "Function description",
-                    },
-                },
-                "required": ["function_code", "function_name"],
-            },
-        ),
-        types.Tool(
-            name="execute_function",
-            description="Execute a registered function",
-            inputSchema={
-                "type": "object",
-                "properties": {
-                    "function_name": {"type": "string", "description": "Function name"},
-                    "endpoint_id": {"type": "string", "description": "Endpoint UUID"},
-                    "function_args": {
-                        "type": "array",
-                        "description": "Function arguments",
-                    },
-                    "function_kwargs": {
-                        "type": "object",
-                        "description": "Function keyword arguments",
-                    },
-                },
-                "required": ["function_name", "endpoint_id"],
-            },
-        ),
-        types.Tool(
-            name="check_task_status",
-            description="Check task status",
-            inputSchema={
-                "type": "object",
-                "properties": {"task_id": {"type": "string", "description": "Task ID"}},
-                "required": ["task_id"],
-            },
-        ),
-        types.Tool(
-            name="get_task_result",
-            description="Get task result",
-            inputSchema={
-                "type": "object",
-                "properties": {"task_id": {"type": "string", "description": "Task ID"}},
-                "required": ["task_id"],
-            },
-        ),
-        types.Tool(
-            name="list_registered_functions",
-            description="List registered functions",
-            inputSchema={"type": "object", "properties": {}, "required": []},
-        ),
-        types.Tool(
-            name="create_hello_world",
-            description="Create a hello world test function",
-            inputSchema={"type": "object", "properties": {}, "required": []},
-        ),
-    ]
-
-
-@server.call_tool()
-async def handle_call_tool(
-    name: str, arguments: dict[str, Any]
-) -> list[types.TextContent]:
-    """Handle tool calls"""
-    try:
-        if name == "compute_authenticate":
-            result = await compute_authenticate()
-        elif name == "complete_compute_auth":
-            result = await complete_compute_auth(arguments["auth_code"])
-        elif name == "register_function":
-            result = await register_function(
-                arguments["function_code"],
-                arguments["function_name"],
-                arguments.get("description", ""),
-            )
-        elif name == "execute_function":
-            result = await execute_function(
-                arguments["function_name"],
-                arguments["endpoint_id"],
-                arguments.get("function_args", []),
-                arguments.get("function_kwargs", {}),
-            )
-        elif name == "check_task_status":
-            result = await check_task_status(arguments["task_id"])
-        elif name == "get_task_result":
-            result = await get_task_result(arguments["task_id"])
-        elif name == "list_registered_functions":
-            result = await list_registered_functions()
-        elif name == "create_hello_world":
-            result = await create_hello_world()
-        else:
-            result = f"Unknown tool: {name}"
-
-        return [types.TextContent(type="text", text=result)]
-    except Exception as e:
-        return [types.TextContent(type="text", text=f"Error: {str(e)}")]
-
-
+@mcp.tool
 async def compute_authenticate() -> str:
     """Authenticate with Globus Compute"""
     global auth_client
@@ -192,6 +54,7 @@ After authorization, use complete_compute_auth with the code."""
         return f"Authentication failed: {str(e)}"
 
 
+@mcp.tool
 async def complete_compute_auth(auth_code: str) -> str:
     """Complete authentication"""
     global auth_client, compute_client
@@ -227,6 +90,7 @@ async def complete_compute_auth(auth_code: str) -> str:
         return f"Authentication failed: {str(e)}"
 
 
+@mcp.tool
 async def register_function(
     function_code: str, function_name: str, description: str = ""
 ) -> str:
@@ -269,8 +133,12 @@ Code:
         return f"Registration failed: {str(e)}"
 
 
+@mcp.tool
 async def execute_function(
-    function_name: str, endpoint_id: str, function_args: tuple, function_kwargs: Dict,
+    function_name: str,
+    endpoint_id: str,
+    function_args: tuple,
+    function_kwargs: Dict,
 ) -> str:
     """Execute a function"""
     if not compute_client:
@@ -303,6 +171,7 @@ Use check_task_status to monitor progress."""
         return f"Execution failed: {str(e)}"
 
 
+@mcp.tool
 async def check_task_status(task_id: str) -> str:
     """Check task status"""
     if not compute_client:
@@ -322,6 +191,7 @@ Use get_task_result when status is 'success'."""
         return f"Status check failed: {str(e)}"
 
 
+@mcp.tool
 async def get_task_result(task_id: str) -> str:
     """Get task result"""
     if not compute_client:
@@ -340,6 +210,7 @@ Type: {type(result).__name__}"""
         return f"Failed to get result: {str(e)}"
 
 
+@mcp.tool
 async def list_registered_functions() -> str:
     """List registered functions"""
     if not registered_functions:
@@ -352,6 +223,7 @@ async def list_registered_functions() -> str:
     return result
 
 
+@mcp.tool
 async def create_hello_world() -> str:
     """Create hello world function"""
     function_code = """def hello_compute(name="World"):
@@ -368,24 +240,11 @@ async def create_hello_world() -> str:
     )
 
 
-async def main():
-    """Main server loop"""
-    async with mcp.server.stdio.stdio_server() as (read_stream, write_stream):
-        await server.run(
-            read_stream,
-            write_stream,
-            InitializationOptions(
-                server_name="globus-compute-mcp",
-                server_version="0.1.0",
-                capabilities=server.get_capabilities(
-                    notification_options=NotificationOptions(),
-                    experimental_capabilities={},
-                    # notification=True,
-                    # tools=True,
-                ),
-            ),
-        )
-
-
+# Entrypoint
 if __name__ == "__main__":
-    asyncio.run(main())
+    mcp.run(
+        transport="streamable-http",
+        host="0.0.0.0",
+        port=8000,
+        path="/mcps/globus-compute",
+    )
