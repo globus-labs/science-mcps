@@ -5,60 +5,35 @@ ALCF Polaris MCP Server
 This MCP server provides tools and resources to monitor ALCF Polaris cluster status and job activity.
 """
 
+import asyncio
 import json
 import logging
+import subprocess
 from datetime import datetime
 from typing import Any, Optional
 
 import aiohttp
-import cloudscraper
-from aiohttp import CookieJar
 from fastmcp import Context, FastMCP
-from yarl import URL
 
 logger = logging.getLogger(__name__)
 mcp = FastMCP("ALCF Polaris Status Bridge")
-_session: Optional[aiohttp.ClientSession] = None
+
 
 ALCF_STATUS_URL = "https://status.alcf.anl.gov/polaris/activity.json"
 
 
-async def _get_http_session() -> aiohttp.ClientSession:
-    """Get or create HTTP session."""
-    global _session
-    if _session is None:
-        # Solve Cloudflare JS challenge to obtain clearance cookies
-        # Define headers to use for both scraper and session
-        headers = {
-            "User-Agent": (
-                "Mozilla/5.0 (compatible; Globus-Labs-Science-MCPs-Agent/1.0;"
-                " +https://github.com/globus-labs/science-mcps)"
-            )
-        }
-        scraper = cloudscraper.create_scraper()
-        cf_response = scraper.get(ALCF_STATUS_URL, headers=headers)
-        cf_cookies = cf_response.cookies.get_dict()
-        # Initialize HTTP session with both headers and Cloudflare cookies
-        cookie_jar = CookieJar()
-        _session = aiohttp.ClientSession(headers=headers, cookie_jar=cookie_jar)
-        # Apply cookies using a URL object
-        _session.cookie_jar.update_cookies(
-            cf_cookies, response_url=URL(ALCF_STATUS_URL)
-        )
-    return _session
-
-
 async def _fetch_activity_data() -> dict[str, Any]:
-    session = await _get_http_session()
-    try:
-        async with session.get(ALCF_STATUS_URL) as resp:
-            if resp.status == 200:
-                return await resp.json()
-            else:
-                raise Exception(f"HTTP {resp.status}: {await resp.text()}")
-    except Exception as e:
-        logger.error(f"Error fetching ALCF activity: {e}")
-        raise
+    # Use system curl to reliably fetch the JSON
+    def _sync_curl_fetch() -> dict[str, Any]:
+        result = subprocess.run(
+            ["curl", "-sSL", ALCF_STATUS_URL],
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        return json.loads(result.stdout)
+
+    return await asyncio.to_thread(_sync_curl_fetch)
 
 
 async def _get_system_status() -> dict[str, Any]:
@@ -134,7 +109,7 @@ async def _check_alcf_status(detailed: bool = False) -> str:
         return "\n".join(status_lines)
 
     except Exception as e:
-        return f"❌ Error checking ALCF status: {str(e)}"
+        return f"❌ Error checking ALCF status ({type(e).__name__}): {e}"
 
 
 async def _get_running_jobs(limit: int = 10) -> str:
@@ -296,9 +271,6 @@ async def system_health_summary(ctx: Context) -> str:
 
 
 if __name__ == "__main__":
-    # mcp.run(
-    #     transport="streamable-http", host="0.0.0.0", port=8000, path="/mcps/alcf-status"
-    # )
-    import asyncio
-
-    asyncio.run(_fetch_activity_data())
+    mcp.run(
+        transport="streamable-http", host="0.0.0.0", port=8000, path="/mcps/alcf-status"
+    )

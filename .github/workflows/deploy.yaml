@@ -11,6 +11,14 @@ jobs:
     strategy:
       matrix:
         include:
+          - server_name: alcf  # alcf_server.py
+            service: science-mcps-alcf
+            container_path: mcps/compute_facilities/Dockerfile
+            port: 8000
+          - server_name: nersc  # nersc_server.py
+            service: science-mcps-nersc
+            container_path: mcps/compute_facilities/Dockerfile
+            port: 8000
           - server_name: diaspora  # diaspora_server.py
             service: science-mcps-diaspora
             container_path: mcps/diaspora/Dockerfile
@@ -23,24 +31,16 @@ jobs:
             service: science-mcps-transfer
             container_path: mcps/globus/Dockerfile
             port: 8000
-          - server_name: alcf  # alcf_server.py
-            service: science-mcps-alcf
-            container_path: mcps/compute_facilities/Dockerfile
-            port: 8000
-          - server_name: nersc  # nersc_server.py
-            service: science-mcps-nersc
-            container_path: mcps/compute_facilities/Dockerfile
-            port: 8000
     permissions:
       id-token: write
       contents: read
     env:
       AWS_REGION: us-east-1
-      SERVICE: ${{ matrix.service }}
       CONTAINER: fastmcp
       CONTAINER_PATH: ${{ matrix.container_path }}
       PORT: ${{ matrix.port }}
       SERVER_NAME: ${{ matrix.server_name }}
+      SERVICE: ${{ matrix.service }}
 
     steps:
       - name: Checkout
