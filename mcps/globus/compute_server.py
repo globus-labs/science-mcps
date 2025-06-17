@@ -1,6 +1,5 @@
 """FastMCP server exposing Globus Compute functionality via Globus Compute SDK."""
 
-import asyncio
 import logging
 import os
 from typing import Dict, Optional
@@ -229,10 +228,10 @@ async def create_hello_world() -> str:
     function_code = """def hello_compute(name="World"):
     import platform
     import os
-    
+
     hostname = platform.node()
     username = os.getenv('USER', 'unknown')
-    
+
     return f"Hello {name}! Running on {hostname} as {username}" """
 
     return await register_function(

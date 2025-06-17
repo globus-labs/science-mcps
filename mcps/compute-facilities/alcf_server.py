@@ -100,7 +100,7 @@ async def _check_alcf_status(detailed: bool = False) -> str:
         status_lines.append(f"   ⚪ STARTING: {len(starting_jobs)}")
 
         if detailed and running_jobs:
-            status_lines.append(f"\n🏃 Running Jobs Details:")
+            status_lines.append("\n🏃 Running Jobs Details:")
             for i, job in enumerate(running_jobs[:10]):  # Limit to first 10
                 job_id = job.get("jobid", "unknown")
                 project = job.get("project", "unknown")
