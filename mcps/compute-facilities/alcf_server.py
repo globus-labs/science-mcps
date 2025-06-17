@@ -20,7 +20,13 @@ ALCF_STATUS_URL = "https://status.alcf.anl.gov/polaris/activity.json"
 
 async def _get_http_session() -> aiohttp.ClientSession:
     if not hasattr(_get_http_session, "session"):
-        _get_http_session.session = aiohttp.ClientSession()
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (compatible; Globus-Labs-Science-MCP-Agent/1.0;"
+                " +https://github.com/globus-labs/science-mcps)"
+            )
+        }
+        _get_http_session.session = aiohttp.ClientSession(headers=headers)
     return _get_http_session.session
 
 
@@ -182,7 +188,7 @@ async def _get_system_health_summary() -> str:
             f"Overall Status: {health_status}",
             f"Timestamp: {datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S UTC')}",
             "",
-            f"📊 Job Statistics:",
+            "📊 Job Statistics:",
             f"   • Total Jobs: {total_jobs}",
             f"   • Running: {len(running_jobs)}",
             f"   • Queued: {len(queued_jobs)}",
@@ -231,7 +237,7 @@ async def get_health_resource() -> str:
     return await _get_system_health_summary()
 
 
-@mcp.tool
+@mcp.tool(enabled=False)
 async def check_alcf_status_json(ctx: Context) -> str:
     uri = "alcf://polaris/status"
     await ctx.info(f"Fetching status JSON from {uri}")
@@ -247,7 +253,7 @@ async def check_alcf_status(ctx: Context) -> str:
     return res
 
 
-@mcp.tool
+@mcp.tool(enabled=False)
 async def get_running_jobs_json(ctx: Context) -> str:
     uri = "alcf://polaris/jobs"
     await ctx.info(f"Fetching job activity JSON from {uri}")
