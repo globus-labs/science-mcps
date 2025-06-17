@@ -1,6 +1,3 @@
-# tests/test_nersc_server.py
-
-import json
 import os
 
 import pytest

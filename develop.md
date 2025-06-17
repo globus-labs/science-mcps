@@ -85,31 +85,40 @@ You can manually deploy an MCP server (e.g., ALCF status) to AWS Lightsail using
 
 ```bash
 AWS_REGION="us-east-1"
-CONTAINER="fastmcp"
-PORT="8000"
-SERVICE="science-mcps-alcf"
+CONTAINER_LABEL="fastmcp"
+LOCAL_IMAGE_TAG="science-mcps-facility-image"
+LIGHTSAIL_SERVICE_NAME="science-mcps-alcf"
+SERVICE_PORT="8000"
 SERVER_NAME="alcf"
+DEPLOY_IMAGE_TAG=":science-mcps-alcf.fastmcp.latest"
 
-# Push the container image to Lightsail
+# Push your local image to the Lightsail container registry
 aws lightsail push-container-image \
-  --region $AWS_REGION \
-  --service-name $SERVICE \
-  --label $CONTAINER \
-  --image science-mcps-facility-image
+  --region "${AWS_REGION}" \
+  --service-name "${LIGHTSAIL_SERVICE_NAME}" \
+  --label "${CONTAINER_LABEL}" \
+  --image "${LOCAL_IMAGE_TAG}"
 
-# Create a deployment with the container
-IMAGE_NAME=":science-mcps-alcf.fastmcp.latest"
+# Build the JSON payload for deployment
 CONTAINERS_JSON=$(jq -n \
-  --arg name "$CONTAINER" \
-  --arg image "$IMAGE_NAME" \
-  --arg port "$PORT" \
-  --arg server "$SERVER_NAME" \
-  '{($name): {image: $image, ports: {($port): "HTTP"}, environment: {SERVER_NAME: $server}}}')
+  --arg container "${CONTAINER_LABEL}" \
+  --arg imageTag "${DEPLOY_IMAGE_TAG}" \
+  --arg port "${SERVICE_PORT}" \
+  --arg server "${SERVER_NAME}" \
+  '{
+     ($container): {
+       image:      $imageTag,
+       ports:      { ($port): "HTTP" },
+       environment: { SERVER_NAME: $server }
+     }
+   }')
+
+# Create a new deployment in your Lightsail service
 aws lightsail create-container-service-deployment \
-  --region $AWS_REGION \
-  --service-name $SERVICE \
-  --containers "$CONTAINERS_JSON" \
-  --public-endpoint "{\"containerName\": \"$CONTAINER\", \"containerPort\": $PORT}"
+  --region "${AWS_REGION}" \
+  --service-name "${LIGHTSAIL_SERVICE_NAME}" \
+  --containers "${CONTAINERS_JSON}" \
+  --public-endpoint "{\"containerName\":\"${CONTAINER_LABEL}\",\"containerPort\":${SERVICE_PORT}}"
 ```
 
 ### Automated Deployment via GitHub Actions

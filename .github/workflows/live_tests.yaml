@@ -24,4 +24,7 @@ jobs:
         run: pip install tox
 
       - name: Run only ALCF & NERSC tests
-        run: tox -e py311
+        env:
+          DIASPORA_CLIENT_ID: ${{ secrets.DIASPORA_CLIENT_ID }}
+          DIASPORA_CLIENT_SECRET: ${{ secrets.DIASPORA_CLIENT_SECRET }}
+        run: tox -e py311 -- tests/alcf_server_test.py tests/nersc_server_test.py tests/diaspora_server_test.py

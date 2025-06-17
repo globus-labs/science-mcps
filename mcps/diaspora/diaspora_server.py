@@ -9,8 +9,13 @@ from typing import Any, Callable, Optional
 import globus_sdk
 from diaspora_event_sdk import Client as DiasporaClient
 from diaspora_event_sdk import KafkaConsumer, KafkaProducer
-from diaspora_event_sdk.sdk.login_manager import DiasporaScopes, LoginManager
+from diaspora_event_sdk.sdk.login_manager import (
+    DiasporaScopes,
+    LoginManager,
+    tokenstore,
+)
 from fastmcp import FastMCP
+from globus_sdk import ConfidentialAppAuthClient
 from globus_sdk.scopes import AuthScopes
 
 log = logging.getLogger(__name__)
@@ -101,6 +106,32 @@ def diaspora_authenticate() -> str:
         "Visit the link, approve access, then call `complete_diaspora_auth(<code>)` with the returned code.\n\n "
         f"{url}"
     )
+
+
+@mcp.tool
+def diaspora_confidential_auth(
+    client_id: str,
+    client_secret: str,
+) -> str:
+    """Authenticate using the OAuth2 Client Credentials flow."""
+    global _login_mgr, _login_mgr, _diaspora, _is_logged_in
+
+    if not client_id:
+        return "❌ Please provide a confidential client id."
+    if not client_secret:
+        return "❌ Please provide a confidential client secret."
+    ca = ConfidentialAppAuthClient(client_id, client_secret)
+    token_response = ca.oauth2_client_credentials_tokens(
+        requested_scopes=[DiasporaScopes.all, AuthScopes.openid],
+    )
+    storage = tokenstore.get_token_storage_adapter()
+    storage.store(token_response)
+    ca.userinfo = lambda: {"sub": CLIENT_ID}
+    _login_mgr = LoginManager()
+    _login_mgr._auth_client = ca
+    _diaspora = None  # force re-init with our patched client
+    _is_logged_in = True
+    return f"✅ Confidential client authentication successful! {token_response}"
 
 
 @mcp.tool
