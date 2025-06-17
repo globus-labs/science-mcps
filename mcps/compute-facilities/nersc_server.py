@@ -24,7 +24,13 @@ NERSC_STATUS_ENDPOINT = "status/"
 async def _get_http_session() -> aiohttp.ClientSession:
     """Get or create HTTP session."""
     if not hasattr(_get_http_session, "session"):
-        _get_http_session.session = aiohttp.ClientSession()
+        headers = {
+            "User-Agent": (
+                "Mozilla/5.0 (compatible; Globus-Labs-Science-MCP-Agent/1.0;"
+                " +https://github.com/globus-labs/science-mcps)"
+            )
+        }
+        _get_http_session.session = aiohttp.ClientSession(headers=headers)
     return _get_http_session.session
 
 
@@ -152,7 +158,7 @@ async def get_system_maintenance(system: str) -> str:
     return text
 
 
-@mcp.tool
+@mcp.tool(enabled=False)
 async def get_nersc_status_json(ctx: Context):
     """Fetch raw JSON for all NERSC systems to the user."""
     uri = "nersc://status/systems"
@@ -170,7 +176,7 @@ async def get_nersc_status(ctx: Context):
     return res
 
 
-@mcp.tool
+@mcp.tool(enabled=False)
 async def get_nersc_status_individual_json(system: str, ctx: Context) -> str:
     """Tool to get raw JSON status for a NERSC system."""
     uri = f"nersc://status/{system}"
