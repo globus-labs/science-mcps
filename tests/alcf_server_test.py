@@ -1,6 +1,3 @@
-# tests/test_nersc_server.py
-
-import json
 import os
 
 import pytest
@@ -8,7 +5,7 @@ from fastmcp import Client
 
 # Remote NERSC MCP endpoint (can override via environment variable)
 REMOTE_URL = os.getenv(
-    "NERSC_MCP_URL",
+    "ALCF_MCP_URL",
     "https://science-mcps-alcf.qpp943wkvr7b2.us-east-1.cs.amazonlightsail.com/mcps/alcf-status/",
 )
 
