@@ -1,4 +1,4 @@
-name: Deploy Diaspora MCP
+name: Deploy MCP Servers to AWS Lightsail
 
 on:
   push:
@@ -8,16 +8,39 @@ on:
 jobs:
   deploy:
     runs-on: ubuntu-latest
-    # These permissions are needed to interact with GitHub's OIDC Token endpoint.
+    strategy:
+      matrix:
+        include:
+          - server_name: diaspora  # diaspora_server.py
+            service: science-mcps-diaspora
+            container_path: mcps/diaspora/Dockerfile
+            port: 8000
+          - server_name: compute  # compute_server.py
+            service: science-mcps-compute
+            container_path: mcps/globus/Dockerfile
+            port: 8000
+          - server_name: transfer  # transfer_server.py
+            service: science-mcps-transfer
+            container_path: mcps/globus/Dockerfile
+            port: 8000
+          - server_name: alcf  # alcf_server.py
+            service: science-mcps-alcf
+            container_path: mcps/compute-facilities/Dockerfile
+            port: 8000
+          - server_name: nersc  # nersc_server.py
+            service: science-mcps-nersc
+            container_path: mcps/compute-facilities/Dockerfile
+            port: 8000
     permissions:
       id-token: write
       contents: read
     env:
       AWS_REGION: us-east-1
-      SERVICE: science-mcps-diaspora
+      SERVICE: ${{ matrix.service }}
       CONTAINER: fastmcp
-      CONTAINER_PATH: mcps/diaspora/Dockerfile
-      PORT: 8000
+      CONTAINER_PATH: ${{ matrix.container_path }}
+      PORT: ${{ matrix.port }}
+      SERVER_NAME: ${{ matrix.server_name }}
 
     steps:
       - name: Checkout
@@ -29,18 +52,16 @@ jobs:
           role-to-assume: arn:aws:iam::423623835312:role/github-action-role
           aws-region: ${{ env.AWS_REGION }}
 
-      - name: Delete old Docker images
+      - name: Install jq
         run: |
-          output=$(aws lightsail get-container-images --region $AWS_REGION --service-name $SERVICE --no-paginate --output text)
-          container_names=($(echo "$output" | awk '{print $NF}'))
-          for name in "${container_names[@]:1}"; do
-            echo "IMAGE TO DELETE $name"
-            aws lightsail delete-container-image --region $AWS_REGION --service-name $SERVICE --image "$name" || true
-          done
+          sudo apt-get update
+          sudo apt-get install -y jq
 
       - name: Build Docker image
         run: |
-          docker build --platform=linux/amd64 -t $SERVICE -f $CONTAINER_PATH .
+          docker build --platform=linux/amd64 \
+            -t $SERVICE \
+            -f $CONTAINER_PATH .
 
       - name: Install Lightsail plugin prerequisites
         run: |
@@ -56,26 +77,43 @@ jobs:
             --region $AWS_REGION \
             --service-name $SERVICE \
             --power micro \
-            --scale 1 \
-            || true
+            --scale 1 || true
+
+      - name: Delete old Docker images
+        run: |
+          output=$(aws lightsail get-container-images \
+            --region $AWS_REGION \
+            --service-name $SERVICE \
+            --no-paginate \
+            --output text)
+          container_names=($(echo "$output" | awk '{print $NF}'))
+          for name in "${container_names[@]:1}"; do
+            echo "IMAGE TO DELETE: $name"
+            aws lightsail delete-container-image \
+              --region $AWS_REGION \
+              --service-name $SERVICE \
+              --image "$name" || true
+          done
 
       - name: Push image to Lightsail
         run: |
-            aws lightsail push-container-image \
+          aws lightsail push-container-image \
             --region $AWS_REGION \
             --service-name $SERVICE \
             --label $CONTAINER \
-            --image $SERVICE  
+            --image $SERVICE
 
       - name: Deploy to Lightsail
         run: |
-            # Lightsail expects the image reference with leading colon:
-            IMAGE_NAME=":${SERVICE}.${CONTAINER}.latest"
-
-            aws lightsail create-container-service-deployment \
+          IMAGE_NAME=":${SERVICE}.${CONTAINER}.latest"
+          CONTAINERS_JSON=$(jq -n \
+            --arg name "$CONTAINER" \
+            --arg image "$IMAGE_NAME" \
+            --arg port "$PORT" \
+            --arg server "$SERVER_NAME" \
+            '{($name): {image: $image, ports: {($port): "HTTP"}, environment: {SERVER_NAME: $server}}}')
+          aws lightsail create-container-service-deployment \
             --region $AWS_REGION \
             --service-name $SERVICE \
-            --containers \
-                "{\"${CONTAINER}\": {\"image\": \"${IMAGE_NAME}\", \"ports\": {\"${PORT}\": \"HTTP\"}}}" \
-            --public-endpoint \
-                "{\"containerName\": \"${CONTAINER}\", \"containerPort\": ${PORT}}"
+            --containers "$CONTAINERS_JSON" \
+            --public-endpoint "{\"containerName\": \"$CONTAINER\", \"containerPort\": $PORT}"
