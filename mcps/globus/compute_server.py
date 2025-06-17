@@ -2,7 +2,7 @@
 
 import logging
 import os
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import globus_compute_sdk
 import globus_sdk
@@ -100,7 +100,7 @@ async def register_function(
         return "Not authenticated. Please authenticate first."
 
     try:
-        exec_globals = {}
+        exec_globals: Dict[str, Any] = {}
         exec(function_code, exec_globals)
 
         functions = {
@@ -136,8 +136,8 @@ Code:
 async def execute_function(
     function_name: str,
     endpoint_id: str,
-    function_args: tuple,
-    function_kwargs: Dict,
+    function_args: Tuple[Any, ...],
+    function_kwargs: Dict[str, Any],
 ) -> str:
     """Execute a function"""
     if not compute_client:

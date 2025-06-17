@@ -8,29 +8,33 @@ This MCP server provides tools and resources to monitor ALCF Polaris cluster sta
 import json
 import logging
 from datetime import datetime
+from typing import Any, Optional
 
 import aiohttp
 from fastmcp import Context, FastMCP
 
 logger = logging.getLogger(__name__)
 mcp = FastMCP("ALCF Polaris Status Bridge")
+_session: Optional[aiohttp.ClientSession] = None
 
 ALCF_STATUS_URL = "https://status.alcf.anl.gov/polaris/activity.json"
 
 
 async def _get_http_session() -> aiohttp.ClientSession:
-    if not hasattr(_get_http_session, "session"):
+    """Get or create HTTP session."""
+    global _session
+    if _session is None:
         headers = {
             "User-Agent": (
                 "Mozilla/5.0 (compatible; Globus-Labs-Science-MCP-Agent/1.0;"
                 " +https://github.com/globus-labs/science-mcps)"
             )
         }
-        _get_http_session.session = aiohttp.ClientSession(headers=headers)
-    return _get_http_session.session
+        _session = aiohttp.ClientSession(headers=headers)
+    return _session
 
 
-async def _fetch_activity_data() -> dict:
+async def _fetch_activity_data() -> dict[str, Any]:
     session = await _get_http_session()
     try:
         async with session.get(ALCF_STATUS_URL) as resp:
@@ -43,7 +47,7 @@ async def _fetch_activity_data() -> dict:
         raise
 
 
-async def _get_system_status() -> dict:
+async def _get_system_status() -> dict[str, Any]:
     """Summarize system status."""
     data = await _fetch_activity_data()
     running = data.get("running", [])
@@ -60,7 +64,7 @@ async def _get_system_status() -> dict:
     }
 
 
-async def _get_job_activity() -> dict:
+async def _get_job_activity() -> dict[str, Any]:
     """Return raw job activity data."""
     return await _fetch_activity_data()
 
@@ -278,6 +282,9 @@ async def system_health_summary(ctx: Context) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run(
-        transport="streamable-http", host="0.0.0.0", port=8000, path="/mcps/alcf-status"
-    )
+    # mcp.run(
+    #     transport="streamable-http", host="0.0.0.0", port=8000, path="/mcps/alcf-status"
+    # )
+    import asyncio
+
+    print(asyncio.run(_fetch_activity_data()))

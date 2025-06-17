@@ -4,7 +4,7 @@ import functools
 import logging
 import os
 import uuid
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 import globus_sdk
 from diaspora_event_sdk import Client as DiasporaClient
@@ -51,11 +51,11 @@ def _get_producer() -> KafkaProducer:
     return _producer
 
 
-def require_login(func):
+def require_login(func: Callable[..., Any]) -> Callable[..., Any]:
     """Ensure the caller has completed the Globus login flow."""
 
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         if not _is_logged_in:  # ← reuse your module-level flag
             raise RuntimeError(
                 "Please authenticate first via diaspora_authenticate / complete_diaspora_auth"
@@ -65,11 +65,11 @@ def require_login(func):
     return wrapper
 
 
-def require_rotated_key(func):
+def require_rotated_key(func: Callable[..., Any]) -> Callable[..., Any]:
     """Ensure the caller has run create_key() at least once."""
 
     @functools.wraps(func)
-    def wrapper(*args, **kwargs):
+    def wrapper(*args: Any, **kwargs: Any) -> Any:
         if not _have_rotated_key:
             raise RuntimeError(
                 "Call create_key once before producing/consuming messages"
@@ -117,7 +117,7 @@ def complete_diaspora_auth(code: str) -> str:
         log.error("Token exchange failed", exc_info=True)
         return f"❌ Token exchange failed: {exc}"
 
-    _get_login_mgr()._token_storage.store(tokens)  # type: ignore
+    _get_login_mgr()._token_storage.store(tokens)
     _auth_client = None
     _diaspora = None  # force rebuild
     _is_logged_in = True
