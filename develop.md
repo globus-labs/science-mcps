@@ -6,7 +6,7 @@ pip install pytest pytest-asyncio aresponses mypy ruff pre-commit
 ## Testing Locally without Docker
 ```bash
 # NERSC Status
-cd mcps/compute-facilities && python alcf_server.py
+cd mcps/compute_facilities && python alcf_server.py
 # ALCF Status
 python nersc_server.py
 
@@ -27,7 +27,7 @@ python compute_server.py
 cd /path/to/science-mcps/
 
 # Compute facilities
-docker build --platform=linux/amd64 -t science-mcps-facility-image -f mcps/compute-facilities/Dockerfile .
+docker build --platform=linux/amd64 -t science-mcps-facility-image -f mcps/compute_facilities/Dockerfile .
 
 # Diaspora
 docker build --platform=linux/amd64 -t science-mcps-diaspora-image -f mcps/diaspora/Dockerfile .

@@ -282,9 +282,6 @@ async def system_health_summary(ctx: Context) -> str:
 
 
 if __name__ == "__main__":
-    # mcp.run(
-    #     transport="streamable-http", host="0.0.0.0", port=8000, path="/mcps/alcf-status"
-    # )
-    import asyncio
-
-    print(asyncio.run(_fetch_activity_data()))
+    mcp.run(
+        transport="streamable-http", host="0.0.0.0", port=8000, path="/mcps/alcf-status"
+    )
