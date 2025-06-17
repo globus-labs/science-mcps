@@ -29,7 +29,7 @@ async def _get_http_session() -> aiohttp.ClientSession:
     if _session is None:
         headers = {
             "User-Agent": (
-                "Mozilla/5.0 (compatible; Globus-Labs-Science-MCP-Agent/1.0;"
+                "Mozilla/5.0 (compatible; Globus-Labs-Science-MCPs-Agent/1.0;"
                 " +https://github.com/globus-labs/science-mcps)"
             )
         }

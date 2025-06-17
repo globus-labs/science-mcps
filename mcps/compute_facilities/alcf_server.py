@@ -11,7 +11,10 @@ from datetime import datetime
 from typing import Any, Optional
 
 import aiohttp
+import cloudscraper
+from aiohttp import CookieJar
 from fastmcp import Context, FastMCP
+from yarl import URL
 
 logger = logging.getLogger(__name__)
 mcp = FastMCP("ALCF Polaris Status Bridge")
@@ -24,13 +27,24 @@ async def _get_http_session() -> aiohttp.ClientSession:
     """Get or create HTTP session."""
     global _session
     if _session is None:
+        # Solve Cloudflare JS challenge to obtain clearance cookies
+        # Define headers to use for both scraper and session
         headers = {
             "User-Agent": (
-                "Mozilla/5.0 (compatible; Globus-Labs-Science-MCP-Agent/1.0;"
+                "Mozilla/5.0 (compatible; Globus-Labs-Science-MCPs-Agent/1.0;"
                 " +https://github.com/globus-labs/science-mcps)"
             )
         }
-        _session = aiohttp.ClientSession(headers=headers)
+        scraper = cloudscraper.create_scraper()
+        cf_response = scraper.get(ALCF_STATUS_URL, headers=headers)
+        cf_cookies = cf_response.cookies.get_dict()
+        # Initialize HTTP session with both headers and Cloudflare cookies
+        cookie_jar = CookieJar()
+        _session = aiohttp.ClientSession(headers=headers, cookie_jar=cookie_jar)
+        # Apply cookies using a URL object
+        _session.cookie_jar.update_cookies(
+            cf_cookies, response_url=URL(ALCF_STATUS_URL)
+        )
     return _session
 
 
@@ -282,6 +296,9 @@ async def system_health_summary(ctx: Context) -> str:
 
 
 if __name__ == "__main__":
-    mcp.run(
-        transport="streamable-http", host="0.0.0.0", port=8000, path="/mcps/alcf-status"
-    )
+    # mcp.run(
+    #     transport="streamable-http", host="0.0.0.0", port=8000, path="/mcps/alcf-status"
+    # )
+    import asyncio
+
+    asyncio.run(_fetch_activity_data())
