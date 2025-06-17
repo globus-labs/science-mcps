@@ -41,6 +41,16 @@ The Diaspora MCP server enable AI assistants to:
 
 [Learn more about the Diaspora MCP Server](mcps/diaspora/README.md)
 
+## Use hosted MCPs (recommended)
+
+Connecting to our hosted MCP servers is the fastest way to get started—no local installation or maintenance required.
+
+1. Open **Claude Desktop** and go to **Settings → Developers**.
+2. Click **Edit Config** and paste [the hosted MCPs configuration](docs/hosted-mcps.md).
+3. Restart **Claude Desktop**.
+
+## To deploy locally
+
 ## Prerequisites
 
 - Python 3.11
@@ -77,11 +87,10 @@ The Diaspora MCP server enable AI assistants to:
 
 To add these MCP servers to Claude Desktop:
 
-1. Open Claude Desktop
-2. Go to Settings (gear icon)
-3. Navigate to the "MCP Servers" section
-4. Click "Add Server"
-5. Configure each server as needed
+1. Open **Claude Desktop** and go to **Settings → Developers**.
+2. Click **Edit Config**.
+3. Configure each server as needed, see below.
+4. Restart **Claude Desktop**.
 
 For detailed configuration instructions, see the README files for each component:
 - [Globus MCP Servers Setup](mcps/globus/README.md#setting-up-mcp-servers-in-claude-desktop)
