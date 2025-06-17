@@ -23,7 +23,7 @@ These servers implement the [Model Context Protocol (MCP)](https://github.com/an
 1. Clone this repository:
    ```bash
    git clone https://github.com/globus-labs/science-mcps
-   cd science-mcps/mcps/compute-facilities
+   cd science-mcps/mcps/compute_facilities
    ```
 
 2. Create a conda environment:
@@ -56,7 +56,7 @@ Edit the claude_desktop_config.json file at `~/Library/Application\ Support/Clau
   "mcpServers": {
     "alcf-mcp": {
       "command": "/path/to/your/env/python",
-      "args": ["/path/to/science-mcps/mcps/compute-facilities/alcf_server.py"],
+      "args": ["/path/to/science-mcps/mcps/compute_facilities/alcf_server.py"],
     }
   }
 }
@@ -75,7 +75,7 @@ Edit the claude_desktop_config.json file at `~/Library/Application\ Support/Clau
     ...,
     "nersc-mcp": {
       "command": "/path/to/your/env/python",
-      "args": ["/path/to/science-mcps/mcps/compute-facilities/nersc_server.py"],
+      "args": ["/path/to/science-mcps/mcps/compute_facilities/nersc_server.py"],
     }
   }
 }

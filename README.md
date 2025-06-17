@@ -30,7 +30,7 @@ The Compute Facility MCP servers enable AI assistants to:
 - **ALCF** - Check status of ALCF machines (e.g., Polaris) and monitor running jobs
 - **NERSC** - Check status of NERSC systems and services
 
-[Learn more about Compute Facility MCP Servers](mcps/compute-facilities/READEME.md)
+[Learn more about Compute Facility MCP Servers](mcps/compute_facilities/README.md)
 
 ### Diaspora MCP Server
 
@@ -65,9 +65,9 @@ The Diaspora MCP server enable AI assistants to:
    ```bash
    # For Globus servers
    pip install -r mcps/globus/requirements.txt
-   
+
    # For Compute Facility servers
-   pip install -r mcps/compute-facilities/requirements.txt
+   pip install -r mcps/compute_facilities/requirements.txt
 
    # For Diaspora server
    pip install -r mcps/diaspora/requirements.txt
@@ -85,7 +85,7 @@ To add these MCP servers to Claude Desktop:
 
 For detailed configuration instructions, see the README files for each component:
 - [Globus MCP Servers Setup](mcps/globus/README.md#setting-up-mcp-servers-in-claude-desktop)
-- [Compute Facility MCP Servers Setup](mcps/compute-facilities/READEME.md#setting-up-mcp-servers-in-claude-desktop)
+- [Compute Facility MCP Servers Setup](mcps/compute_facilities/README.md#setting-up-mcp-servers-in-claude-desktop)
 - [Diaspora MCP Server Setup](mcps/diaspora/README.md#setting-up-the-mcp-server-in-claude-desktop)
 
 ## Usage Examples
@@ -151,8 +151,8 @@ Register a Diaspora topic, produce three messages, and consume the latest messag
 - `get_maintenance_info` - Check the maintenance schedule of the resources
 
 ### Diaspora Event Fabric Tools
-- `register_topic` – create a new Kafka topic  
-- `produce_event` – publish a UTF‑8 message to a topic  
+- `register_topic` – create a new Kafka topic
+- `produce_event` – publish a UTF‑8 message to a topic
 - `consume_latest_event` – fetch the most recent event from a topic
 - And more...
 

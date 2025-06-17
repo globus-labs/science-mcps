@@ -8,14 +8,16 @@ It retrieves information from NERSC's public API about system availability, main
 
 import json
 import logging
+from typing import Any, Optional
 from urllib.parse import urljoin
 
 import aiohttp
 from fastmcp import Context, FastMCP
 
 logger = logging.getLogger(__name__)
-
 mcp = FastMCP("NERSC Status Bridge")
+_session: Optional[aiohttp.ClientSession] = None
+
 
 NERSC_API_BASE = "https://api.nersc.gov/api/v1.2/"
 NERSC_STATUS_ENDPOINT = "status/"
@@ -23,18 +25,19 @@ NERSC_STATUS_ENDPOINT = "status/"
 
 async def _get_http_session() -> aiohttp.ClientSession:
     """Get or create HTTP session."""
-    if not hasattr(_get_http_session, "session"):
+    global _session
+    if _session is None:
         headers = {
             "User-Agent": (
-                "Mozilla/5.0 (compatible; Globus-Labs-Science-MCP-Agent/1.0;"
+                "Mozilla/5.0 (compatible; Globus-Labs-Science-MCPs-Agent/1.0;"
                 " +https://github.com/globus-labs/science-mcps)"
             )
         }
-        _get_http_session.session = aiohttp.ClientSession(headers=headers)
-    return _get_http_session.session
+        _session = aiohttp.ClientSession(headers=headers)
+    return _session
 
 
-async def _get_system_status() -> dict:
+async def _get_system_status() -> list[dict[str, Any]]:
     """Retrieve system status from NERSC API."""
     session = await _get_http_session()
     url = urljoin(NERSC_API_BASE, NERSC_STATUS_ENDPOINT)
@@ -50,7 +53,7 @@ async def _get_system_status() -> dict:
         raise Exception(f"Failed to connect to NERSC API: {str(e)}")
 
 
-def _format_status_summary(status_data: dict) -> str:
+def _format_status_summary(status_data: dict[str, Any]) -> str:
     """Format status data into a human-readable summary."""
     summary = ["NERSC System Status Summary", "=" * 30, ""]
     if not status_data:
@@ -159,7 +162,7 @@ async def get_system_maintenance(system: str) -> str:
 
 
 @mcp.tool(enabled=False)
-async def get_nersc_status_json(ctx: Context):
+async def get_nersc_status_json(ctx: Context) -> str:
     """Fetch raw JSON for all NERSC systems to the user."""
     uri = "nersc://status/systems"
     await ctx.info(f"Fetching system status from {uri}")
@@ -168,7 +171,7 @@ async def get_nersc_status_json(ctx: Context):
 
 
 @mcp.tool
-async def get_nersc_status(ctx: Context):
+async def get_nersc_status(ctx: Context) -> str:
     """Fetch human-readable summary of all NERSC systems to the user."""
     uri = "nersc://status/systems/summary"
     await ctx.info(f"Fetching system status from {uri}")

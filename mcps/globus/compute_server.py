@@ -1,9 +1,8 @@
 """FastMCP server exposing Globus Compute functionality via Globus Compute SDK."""
 
-import asyncio
 import logging
 import os
-from typing import Dict, Optional
+from typing import Any, Dict, Optional, Tuple
 
 import globus_compute_sdk
 import globus_sdk
@@ -101,7 +100,7 @@ async def register_function(
         return "Not authenticated. Please authenticate first."
 
     try:
-        exec_globals = {}
+        exec_globals: Dict[str, Any] = {}
         exec(function_code, exec_globals)
 
         functions = {
@@ -137,8 +136,8 @@ Code:
 async def execute_function(
     function_name: str,
     endpoint_id: str,
-    function_args: tuple,
-    function_kwargs: Dict,
+    function_args: Tuple[Any, ...],
+    function_kwargs: Dict[str, Any],
 ) -> str:
     """Execute a function"""
     if not compute_client:
@@ -229,10 +228,10 @@ async def create_hello_world() -> str:
     function_code = """def hello_compute(name="World"):
     import platform
     import os
-    
+
     hostname = platform.node()
     username = os.getenv('USER', 'unknown')
-    
+
     return f"Hello {name}! Running on {hostname} as {username}" """
 
     return await register_function(

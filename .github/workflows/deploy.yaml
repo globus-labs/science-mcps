@@ -25,11 +25,11 @@ jobs:
             port: 8000
           - server_name: alcf  # alcf_server.py
             service: science-mcps-alcf
-            container_path: mcps/compute-facilities/Dockerfile
+            container_path: mcps/compute_facilities/Dockerfile
             port: 8000
           - server_name: nersc  # nersc_server.py
             service: science-mcps-nersc
-            container_path: mcps/compute-facilities/Dockerfile
+            container_path: mcps/compute_facilities/Dockerfile
             port: 8000
     permissions:
       id-token: write

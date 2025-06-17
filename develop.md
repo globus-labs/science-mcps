@@ -1,9 +1,14 @@
+## Dev Dependencies
+```bash
+pip install pytest pytest-asyncio aresponses mypy ruff pre-commit
+```
+
 ## Testing Locally without Docker
 ```bash
 # NERSC Status
-cd mcps/compute-facilities && python alcf_server.py
+cd mcps/compute_facilities && python alcf_server.py
 # ALCF Status
-python nersc_server.py 
+python nersc_server.py
 
 # Diaspora
 cd mcps/diaspora && python diaspora_server.py
@@ -22,7 +27,7 @@ python compute_server.py
 cd /path/to/science-mcps/
 
 # Compute facilities
-docker build --platform=linux/amd64 -t science-mcps-facility-image -f mcps/compute-facilities/Dockerfile .
+docker build --platform=linux/amd64 -t science-mcps-facility-image -f mcps/compute_facilities/Dockerfile .
 
 # Diaspora
 docker build --platform=linux/amd64 -t science-mcps-diaspora-image -f mcps/diaspora/Dockerfile .
@@ -40,7 +45,7 @@ docker run --rm -p 8000:8000 -e SERVER_NAME=alcf  science-mcps-facility-image
 docker run --rm -p 8000:8000 -e SERVER_NAME=nersc science-mcps-facility-image
 
 # Diaspora
-docker run --rm -p 8000:8000 -e SERVER_NAME=diaspora science-mcps-diaspora-image 
+docker run --rm -p 8000:8000 -e SERVER_NAME=diaspora science-mcps-diaspora-image
 
 # Transfer
 docker run --rm -p 8000:8000 -e SERVER_NAME=transfer science-mcps-globus-image
@@ -49,7 +54,7 @@ docker run --rm -p 8000:8000 -e SERVER_NAME=compute  science-mcps-globus-image
 
 ```
 
-3. **Inspect via MCP Inspector** 
+3. **Inspect via MCP Inspector**
 
 In a separate terminal, run `npx @modelcontextprotocol/inspector`, then visit:
 
