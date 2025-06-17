@@ -77,9 +77,50 @@ http://localhost:6274/?MCP_PROXY_AUTH_TOKEN=...
       ]
     }
 ```
+## Deploying Hosted MCPs on AWS Lightsail
 
-## Testing the Hosted MCPs
+### Manual Deployment (e.g., for ALCF Status MCP)
 
+You can manually deploy an MCP server (e.g., ALCF status) to AWS Lightsail using the following steps (assume that the container service `science-mcps-alcf` has been created in your AWS account):
+
+```bash
+AWS_REGION="us-east-1"
+CONTAINER="fastmcp"
+PORT="8000"
+SERVICE="science-mcps-alcf"
+SERVER_NAME="alcf"
+
+# Push the container image to Lightsail
+aws lightsail push-container-image \
+  --region $AWS_REGION \
+  --service-name $SERVICE \
+  --label $CONTAINER \
+  --image science-mcps-facility-image
+
+# Create a deployment with the container
+IMAGE_NAME=":science-mcps-alcf.fastmcp.latest"
+CONTAINERS_JSON=$(jq -n \
+  --arg name "$CONTAINER" \
+  --arg image "$IMAGE_NAME" \
+  --arg port "$PORT" \
+  --arg server "$SERVER_NAME" \
+  '{($name): {image: $image, ports: {($port): "HTTP"}, environment: {SERVER_NAME: $server}}}')
+aws lightsail create-container-service-deployment \
+  --region $AWS_REGION \
+  --service-name $SERVICE \
+  --containers "$CONTAINERS_JSON" \
+  --public-endpoint "{\"containerName\": \"$CONTAINER\", \"containerPort\": $PORT}"
+```
+
+### Automated Deployment via GitHub Actions
+Use the [deploy.yaml](https://github.com/globus-labs/science-mcps/actions/workflows/deploy.yaml) workflow for automated MCP docker container deployment to AWS Lightsail. It runs on every push to the main branch or when manually triggered. Steps include:
+ - Ensure Lightsail service exists
+ - Delete old Docker images
+ - Push image to Lightsail
+ - Deploy to Lightsail
+
+
+## Globus Labs Hosted MCP Endpoints
 ```json
 {
   "mcpServers": {
