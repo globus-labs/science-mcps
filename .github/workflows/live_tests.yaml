@@ -3,13 +3,22 @@ name: Run Lives Tests
 on:
   schedule:
     - cron: '0 * * * *'
+  workflow_dispatch:
 
 jobs:
   selected-tests:
     runs-on: ubuntu-latest
+    environment: Production
     strategy:
       matrix:
         python-version: [3.11]
+        include:
+          - test-name: ALCF
+            test-file: tests/alcf_server_test.py
+          - test-name: NERSC
+            test-file: tests/nersc_server_test.py
+          - test-name: Diaspora
+            test-file: tests/diaspora_server_test.py
 
     steps:
       - name: Check out code
@@ -23,8 +32,8 @@ jobs:
       - name: Install tox
         run: pip install tox
 
-      - name: Run only ALCF & NERSC tests
+      - name: Run ${{ matrix.test-name }} tests
         env:
-          DIASPORA_CLIENT_ID: ${{ secrets.DIASPORA_CLIENT_ID }}
-          DIASPORA_CLIENT_SECRET: ${{ secrets.DIASPORA_CLIENT_SECRET }}
-        run: tox -e py311 -- tests/alcf_server_test.py tests/nersc_server_test.py tests/diaspora_server_test.py
+          DIASPORA_CLIENT_ID: ${{ env.DIASPORA_CLIENT_ID }}
+          DIASPORA_CLIENT_SECRET: ${{ env.DIASPORA_CLIENT_SECRET }}
+        run: tox -e py311 -- ${{ matrix.test-file }}
