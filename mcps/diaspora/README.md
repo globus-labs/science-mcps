@@ -4,12 +4,11 @@ A lightweight [FastMCP](https://gofastmcp.com) server that lets Claude (or any M
 
 ## Available Tools
 
-| Category | Tools |
-|----------|-------|
-| **Auth** | `start_diaspora_login`, `finish_diaspora_login`, `logout` |
-| **Credentials** | `create_key` |
-| **Topics** | `list_topics`, `register_topic`, `unregister_topic` |
-| **Data plane** | `publish_event`, `consume_latest_event` |
+| Category       | Tools                                                                                   |
+| -------------- | --------------------------------------------------------------------------------------- |
+| **Auth**       | `start_diaspora_login`, `finish_diaspora_login`, `diaspora_confidential_auth`, `logout` |
+| **Topics**     | `list_topics`, `register_topic`, `unregister_topic`                                     |
+| **Data plane** | `produce_one`, `consume_latest`                                                         |
 
 
 ## Prerequisites
@@ -70,22 +69,21 @@ Register a Diaspora topic, produce three messages, and consume the latest messag
 
 Claude’s typical workflow:
 1. Authenticate with Globus (diaspora_authenticate → complete_diaspora_auth)
-2. Create MSK credentials (create_key)
 3. Register the topic (register_topic)
-4. Publish three UTF-8 messages (publish_event)
-5. Fetch the newest record (consume_latest_event) and display it
+4. Produce three string messages (produce_one)
+5. Consume the newest message (consume_latest) and display it
 
 
 ## Available Tools
 
 * `diaspora_authenticate`	Start the Globus Native-App login flow
 * `complete_diaspora_auth`	Exchange the auth code for refresh tokens
+* `diaspora_confidential_auth` Authenticate via the Globus Client Credentials.
 * `logout`	Revoke stored tokens and clear cached clients
-* `create_key`	Create or rotate the MSK IAM secret for the current user
 * `list_topics`	List all topics owned by the caller
 * `register_topic`	Create a new Kafka topic under the caller’s namespace
 * `unregister_topic`	Delete an existing topic
-* `publish_event`	Publish a UTF-8 message (optionally with key & headers)
-* `consume_latest_event`	Retrieve the most recent message from a topic
+* `produce_one`	Publish a UTF-8 message (optionally with key)
+* `consume_latest`	Retrieve the most recent message from a topic
 
 These tools cover authentication, credential management, topic administration, and core data-plane operations.

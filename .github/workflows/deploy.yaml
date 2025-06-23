@@ -1,8 +1,6 @@
 name: Deploy MCP Servers to AWS Lightsail
 
 on:
-  push:
-    branches: [ main ]
   workflow_dispatch:
 
 jobs:
