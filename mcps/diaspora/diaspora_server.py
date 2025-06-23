@@ -18,6 +18,7 @@ from kafka import KafkaConsumer, KafkaProducer
 from kafka.sasl.oauth import AbstractTokenProvider
 
 # Required environment variables for AWS Lightsail and local testing
+# Note: AWS Lightsail does not support IAM role assumption; using access keys allows local testing and deployment on Lightsail.
 REQUIRED_ENV_VARS = [
     "AWS_ACCESS_KEY_ID",
     "AWS_SECRET_ACCESS_KEY",
@@ -29,7 +30,6 @@ if missing:
     log.error(f"Missing required environment variables: {', '.join(missing)}")
     sys.exit(1)
 
-# Note: AWS Lightsail does not support IAM role assumption; using access keys allows local testing and deployment on Lightsail.
 
 log = logging.getLogger(__name__)
 CLIENT_ID = os.getenv("GLOBUS_CLIENT_ID", "ee05bbfa-2a1a-4659-95df-ed8946e3aae6")

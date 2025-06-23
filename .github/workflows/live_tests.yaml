@@ -6,26 +6,47 @@ on:
   workflow_dispatch:
 
 jobs:
-  selected-tests:
+  alcf-test:
     runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        python-version: [3.11]
-
     steps:
       - name: Check out code
         uses: actions/checkout@v4
-
-      - name: Set up Python ${{ matrix.python-version }}
+      - name: Set up Python 3.11
         uses: actions/setup-python@v4
         with:
-          python-version: ${{ matrix.python-version }}
-
+          python-version: 3.11
       - name: Install tox
         run: pip install tox
+      - name: Run ALCF live test
+        run: tox -e py311 -- tests/alcf_server_test.py
 
-      - name: Run live tests
+  nersc-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install tox
+        run: pip install tox
+      - name: Run NERSC live test
+        run: tox -e py311 -- tests/nersc_server_test.py
+
+  diaspora-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check out code
+        uses: actions/checkout@v4
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v4
+        with:
+          python-version: 3.11
+      - name: Install tox
+        run: pip install tox
+      - name: Run Diaspora live test
         env:
           DIASPORA_CLIENT_ID: ${{ secrets.DIASPORA_CLIENT_ID }}
           DIASPORA_CLIENT_SECRET: ${{ secrets.DIASPORA_CLIENT_SECRET }}
-        run: tox -e py311 -- tests/alcf_server_test.py tests/nersc_server_test.py tests/diaspora_server_test.py
+        run: tox -e py311 -- tests/diaspora_server_test.py
