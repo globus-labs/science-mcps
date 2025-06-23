@@ -43,7 +43,7 @@ async def test_diaspora_confidential_auth():
 
         raw = await client.call_tool("consume_latest", {"topic": "mcps-cicd"})
         result2 = json.loads(raw[0].text)
-        assert result2["key"] is None and result2["val"] == curr_time
+        assert result2["key"] is None and result2["value"] == curr_time
 
         # test 2: sync produce with key
         curr_time = str(int(time()))
@@ -56,7 +56,7 @@ async def test_diaspora_confidential_auth():
 
         raw = await client.call_tool("consume_latest", {"topic": "mcps-cicd"})
         result2 = json.loads(raw[0].text)
-        assert result2["key"] == msg_key and result2["val"] == curr_time
+        assert result2["key"] == msg_key and result2["value"] == curr_time
 
         # test 3: async produce
         curr_time = str(int(time()))

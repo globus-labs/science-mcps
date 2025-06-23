@@ -132,7 +132,6 @@ SERVER_NAME="diaspora"
 DEPLOY_IMAGE_TAG=":science-mcps-diaspora.fastmcp.latest"
 AWS_ACCESS_KEY_ID=...
 AWS_SECRET_ACCESS_KEY=...
-AWS_DEFAULT_REGION=us-east-1
 
 # Push your local image to the Lightsail container registry
 aws lightsail push-container-image \
@@ -150,7 +149,7 @@ CONTAINERS_JSON=$(jq -n \
   --arg server "${SERVER_NAME}" \
   --arg access_key "${AWS_ACCESS_KEY_ID}"\
   --arg secret_key "${AWS_SECRET_ACCESS_KEY}"\
-  --arg region "${AWS_DEFAULT_REGION}" \
+  --arg region "${AWS_REGION}" \
   '{
      ($container): {
        image:      $imageTag,

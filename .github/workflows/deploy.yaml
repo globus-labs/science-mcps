@@ -39,7 +39,8 @@ jobs:
       PORT: ${{ matrix.port }}
       SERVER_NAME: ${{ matrix.server_name }}
       SERVICE: ${{ matrix.service }}
-
+      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
+      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -101,7 +102,8 @@ jobs:
             --label $CONTAINER \
             --image $SERVICE
 
-      - name: Deploy to Lightsail
+      - name: Deploy to Lightsail 1
+        if: ${{ matrix.server_name != 'diaspora' }}
         run: |
           IMAGE_NAME=":${SERVICE}.${CONTAINER}.latest"
           CONTAINERS_JSON=$(jq -n \
@@ -110,6 +112,31 @@ jobs:
             --arg port "$PORT" \
             --arg server "$SERVER_NAME" \
             '{($name): {image: $image, ports: {($port): "HTTP"}, environment: {SERVER_NAME: $server}}}')
+          aws lightsail create-container-service-deployment \
+            --region $AWS_REGION \
+            --service-name $SERVICE \
+            --containers "$CONTAINERS_JSON" \
+            --public-endpoint "{\"containerName\": \"$CONTAINER\", \"containerPort\": $PORT}"
+
+      - name: Deploy to Lightsail 2
+        if: ${{ matrix.server_name == 'diaspora' }}
+        run: |
+          IMAGE_NAME=":${SERVICE}.${CONTAINER}.latest"
+          CONTAINERS_JSON=$(jq -n \
+            --arg name "$CONTAINER" \
+            --arg image "$IMAGE_NAME" \
+            --arg port "$PORT" \
+            --arg server "$SERVER_NAME" \
+            --arg access_key "${AWS_ACCESS_KEY_ID}"\
+            --arg secret_key "${AWS_SECRET_ACCESS_KEY}"\
+            --arg region "${AWS_REGION}" \
+            '{
+              ($name): {
+                image:      $image,
+                ports:      { ($port): "HTTP" },
+                environment: { SERVER_NAME: $server, AWS_ACCESS_KEY_ID: $access_key, AWS_SECRET_ACCESS_KEY: $secret_key, AWS_DEFAULT_REGION: $region }
+              }
+            }')
           aws lightsail create-container-service-deployment \
             --region $AWS_REGION \
             --service-name $SERVICE \
