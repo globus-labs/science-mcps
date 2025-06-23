@@ -45,7 +45,7 @@ docker run --rm -p 8000:8000 -e SERVER_NAME=alcf  science-mcps-facility-image
 docker run --rm -p 8000:8000 -e SERVER_NAME=nersc science-mcps-facility-image
 
 # Diaspora (needs AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY that are able to assume IAM user roles)
-docker run --rm -p 8000:8000 -e SERVER_NAME=diaspora -e AWS_ACCESS_KEY_ID=... -e AWS_SECRET_ACCESS_KEY=... -e AWS_DEFAULT_REGION=us-east-1 science-mcps-diaspora-image
+docker run --rm -p 8000:8000 -e SERVER_NAME=diaspora -e DIASPORA_AWS_ACCESS_KEY_ID=... -e DIASPORA_AWS_SECRET_ACCESS_KEY=... -e DIASPORA_AWS_DEFAULT_REGION=us-east-1 science-mcps-diaspora-image
 
 # Transfer
 docker run --rm -p 8000:8000 -e SERVER_NAME=transfer science-mcps-globus-image
@@ -130,8 +130,8 @@ LIGHTSAIL_SERVICE_NAME="science-mcps-diaspora"
 SERVICE_PORT="8000"
 SERVER_NAME="diaspora"
 DEPLOY_IMAGE_TAG=":science-mcps-diaspora.fastmcp.latest"
-AWS_ACCESS_KEY_ID=...
-AWS_SECRET_ACCESS_KEY=...
+DIASPORA_AWS_ACCESS_KEY_ID=...
+DIASPORA_AWS_SECRET_ACCESS_KEY=...
 
 # Push your local image to the Lightsail container registry
 aws lightsail push-container-image \
@@ -142,19 +142,20 @@ aws lightsail push-container-image \
 
 
 # Build the JSON payload for deployment
+# Lightsail will always hijack the AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY environment variables and replace them with its own temporary, role-based credentials
 CONTAINERS_JSON=$(jq -n \
   --arg container "${CONTAINER_LABEL}" \
   --arg imageTag "${DEPLOY_IMAGE_TAG}" \
   --arg port "${SERVICE_PORT}" \
   --arg server "${SERVER_NAME}" \
-  --arg access_key "${AWS_ACCESS_KEY_ID}"\
-  --arg secret_key "${AWS_SECRET_ACCESS_KEY}"\
+  --arg access_key "${DIASPORA_AWS_ACCESS_KEY_ID}"\
+  --arg secret_key "${DIASPORA_AWS_SECRET_ACCESS_KEY}"\
   --arg region "${AWS_REGION}" \
   '{
      ($container): {
        image:      $imageTag,
        ports:      { ($port): "HTTP" },
-       environment: { SERVER_NAME: $server, AWS_ACCESS_KEY_ID: $access_key, AWS_SECRET_ACCESS_KEY: $secret_key, AWS_DEFAULT_REGION: $region }
+       environment: { SERVER_NAME: $server, DIASPORA_AWS_ACCESS_KEY_ID: $access_key, DIASPORA_AWS_SECRET_ACCESS_KEY: $secret_key, DIASPORA_AWS_DEFAULT_REGION: $region }
      }
    }')
 

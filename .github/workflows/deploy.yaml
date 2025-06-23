@@ -39,8 +39,8 @@ jobs:
       PORT: ${{ matrix.port }}
       SERVER_NAME: ${{ matrix.server_name }}
       SERVICE: ${{ matrix.service }}
-      AWS_ACCESS_KEY_ID: ${{ secrets.AWS_ACCESS_KEY_ID }}
-      AWS_SECRET_ACCESS_KEY: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+      DIASPORA_AWS_ACCESS_KEY_ID: ${{ secrets.DIASPORA_AWS_ACCESS_KEY_ID }}
+      DIASPORA_AWS_SECRET_ACCESS_KEY: ${{ secrets.DIASPORA_AWS_SECRET_ACCESS_KEY }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -127,14 +127,14 @@ jobs:
             --arg image "$IMAGE_NAME" \
             --arg port "$PORT" \
             --arg server "$SERVER_NAME" \
-            --arg access_key "${AWS_ACCESS_KEY_ID}"\
-            --arg secret_key "${AWS_SECRET_ACCESS_KEY}"\
+            --arg access_key "${DIASPORA_AWS_ACCESS_KEY_ID}"\
+            --arg secret_key "${DIASPORA_AWS_SECRET_ACCESS_KEY}"\
             --arg region "${AWS_REGION}" \
             '{
               ($name): {
                 image:      $image,
                 ports:      { ($port): "HTTP" },
-                environment: { SERVER_NAME: $server, AWS_ACCESS_KEY_ID: $access_key, AWS_SECRET_ACCESS_KEY: $secret_key, AWS_DEFAULT_REGION: $region }
+                environment: { SERVER_NAME: $server, DIASPORA_AWS_ACCESS_KEY_ID: $access_key, DIASPORA_AWS_SECRET_ACCESS_KEY: $secret_key, DIASPORA_AWS_DEFAULT_REGION: $region }
               }
             }')
           aws lightsail create-container-service-deployment \
