@@ -19,16 +19,21 @@ from kafka.sasl.oauth import AbstractTokenProvider
 
 # Required environment variables for AWS Lightsail and local testing
 # Note: AWS Lightsail does not support IAM role assumption; using access keys allows local testing and deployment on Lightsail.
+# Note: AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY may be set/overridden by the AWS Lightsail deployment library; so I prefix them with Diaspora
 REQUIRED_ENV_VARS = [
-    "AWS_ACCESS_KEY_ID",
-    "AWS_SECRET_ACCESS_KEY",
-    "AWS_DEFAULT_REGION",
+    "DIASPORA_AWS_ACCESS_KEY_ID",
+    "DIASPORA_AWS_SECRET_ACCESS_KEY",
+    "DIASPORA_AWS_DEFAULT_REGION",
 ]
 missing = [var for var in REQUIRED_ENV_VARS if not os.getenv(var)]
 if missing:
     log = logging.getLogger(__name__)
     log.error(f"Missing required environment variables: {', '.join(missing)}")
     sys.exit(1)
+
+os.environ["AWS_ACCESS_KEY_ID"] = os.environ["DIASPORA_AWS_ACCESS_KEY_ID"]
+os.environ["AWS_SECRET_ACCESS_KEY"] = os.environ["DIASPORA_AWS_SECRET_ACCESS_KEY"]
+os.environ["AWS_DEFAULT_REGION"] = os.environ["DIASPORA_AWS_DEFAULT_REGION"]
 
 
 log = logging.getLogger(__name__)
