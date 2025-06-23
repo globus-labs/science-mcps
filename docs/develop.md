@@ -44,8 +44,8 @@ docker run --rm -p 8000:8000 -e SERVER_NAME=alcf  science-mcps-facility-image
 # NERSC Status
 docker run --rm -p 8000:8000 -e SERVER_NAME=nersc science-mcps-facility-image
 
-# Diaspora
-docker run --rm -p 8000:8000 -e SERVER_NAME=diaspora science-mcps-diaspora-image
+# Diaspora (needs AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY that are able to assume IAM user roles)
+docker run --rm -p 8000:8000 -e SERVER_NAME=diaspora -e AWS_ACCESS_KEY_ID=... -e AWS_SECRET_ACCESS_KEY=... -e AWS_DEFAULT_REGION=us-east-1 science-mcps-diaspora-image
 
 # Transfer
 docker run --rm -p 8000:8000 -e SERVER_NAME=transfer science-mcps-globus-image
@@ -120,6 +120,55 @@ aws lightsail create-container-service-deployment \
   --containers "${CONTAINERS_JSON}" \
   --public-endpoint "{\"containerName\":\"${CONTAINER_LABEL}\",\"containerPort\":${SERVICE_PORT}}"
 ```
+
+### Manual Deployment - Diaspora MCP
+```bash
+AWS_REGION="us-east-1"
+CONTAINER_LABEL="fastmcp"
+LOCAL_IMAGE_TAG="science-mcps-diaspora-image"
+LIGHTSAIL_SERVICE_NAME="science-mcps-diaspora"
+SERVICE_PORT="8000"
+SERVER_NAME="diaspora"
+DEPLOY_IMAGE_TAG=":science-mcps-diaspora.fastmcp.latest"
+AWS_ACCESS_KEY_ID=...
+AWS_SECRET_ACCESS_KEY=...
+AWS_DEFAULT_REGION=us-east-1
+
+# Push your local image to the Lightsail container registry
+aws lightsail push-container-image \
+  --region "${AWS_REGION}" \
+  --service-name "${LIGHTSAIL_SERVICE_NAME}" \
+  --label "${CONTAINER_LABEL}" \
+  --image "${LOCAL_IMAGE_TAG}"
+
+
+# Build the JSON payload for deployment
+CONTAINERS_JSON=$(jq -n \
+  --arg container "${CONTAINER_LABEL}" \
+  --arg imageTag "${DEPLOY_IMAGE_TAG}" \
+  --arg port "${SERVICE_PORT}" \
+  --arg server "${SERVER_NAME}" \
+  --arg access_key "${AWS_ACCESS_KEY_ID}"\
+  --arg secret_key "${AWS_SECRET_ACCESS_KEY}"\
+  --arg region "${AWS_DEFAULT_REGION}" \
+  '{
+     ($container): {
+       image:      $imageTag,
+       ports:      { ($port): "HTTP" },
+       environment: { SERVER_NAME: $server, AWS_ACCESS_KEY_ID: $access_key, AWS_SECRET_ACCESS_KEY: $secret_key, AWS_DEFAULT_REGION: $region }
+     }
+   }')
+
+echo "$CONTAINERS_JSON" | jq
+
+# Create a new deployment in your Lightsail service
+aws lightsail create-container-service-deployment \
+  --region "${AWS_REGION}" \
+  --service-name "${LIGHTSAIL_SERVICE_NAME}" \
+  --containers "${CONTAINERS_JSON}" \
+  --public-endpoint "{\"containerName\":\"${CONTAINER_LABEL}\",\"containerPort\":${SERVICE_PORT}}"
+```
+
 
 ### Automated Deployment via GitHub Actions
 Use the [deploy.yaml](https://github.com/globus-labs/science-mcps/actions/workflows/deploy.yaml) workflow for automated MCP docker container deployment to AWS Lightsail. It runs on every push to the main branch or when manually triggered. Steps include:

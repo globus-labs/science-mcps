@@ -1,5 +1,6 @@
+import json
 import os
-from time import time
+from time import sleep, time
 
 import pytest
 from fastmcp import Client
@@ -26,22 +27,43 @@ async def test_diaspora_confidential_auth():
         )
         assert "Confidential client authentication successful" in raw[0].text
 
-        raw = await client.call_tool("create_key")
-        assert "access_key" in raw[0].text
-        assert "secret_key" in raw[0].text
-        assert "endpoint" in raw[0].text
-
         raw = await client.call_tool("list_topics")
         assert "diaspora-cicd" in raw[0].text
 
         raw = await client.call_tool("register_topic", {"topic": "mcps-cicd"})
         assert "success" in raw[0].text or "no-op" in raw[0].text
 
+        # test 1: sync produce without key
         curr_time = str(int(time()))
         raw = await client.call_tool(
-            "produce_event", {"topic": "mcps-cicd", "value": curr_time}
+            "produce_one", {"topic": "mcps-cicd", "value": curr_time}
         )
-        assert "partition=0" in raw[0].text
+        result1 = json.loads(raw[0].text)
+        assert result1["status"] == "produced"
 
-        # raw = await client.call_tool("consume_latest_event", {"topic": "mcps-cicd"})
-        # assert curr_time in raw[0].text
+        raw = await client.call_tool("consume_latest", {"topic": "mcps-cicd"})
+        result2 = json.loads(raw[0].text)
+        assert result2["key"] is None and result2["val"] == curr_time
+
+        # test 2: sync produce with key
+        curr_time = str(int(time()))
+        msg_key = str(int(time()) + int(time()))
+        raw = await client.call_tool(
+            "produce_one", {"topic": "mcps-cicd", "value": curr_time, "key": msg_key}
+        )
+        result1 = json.loads(raw[0].text)
+        assert result1["status"] == "produced"
+
+        raw = await client.call_tool("consume_latest", {"topic": "mcps-cicd"})
+        result2 = json.loads(raw[0].text)
+        assert result2["key"] == msg_key and result2["val"] == curr_time
+
+        # test 3: async produce
+        curr_time = str(int(time()))
+        msg_key = str(int(time()) + int(time()))
+        raw = await client.call_tool(
+            "produce_one",
+            {"topic": "mcps-cicd", "value": curr_time, "key": msg_key, "sync": False},
+        )
+        result1 = json.loads(raw[0].text)
+        assert result1["status"] == "queued"
