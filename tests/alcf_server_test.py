@@ -14,18 +14,18 @@ REMOTE_URL = os.getenv(
 async def test_check_alcf_status():
     async with Client(REMOTE_URL) as client:
         raw = await client.call_tool("check_alcf_status")
-        assert "Job State Summary" in raw[0].text
+        assert "Job State Summary" in raw.content[0].text
 
 
 @pytest.mark.asyncio
 async def test_get_running_jobs():
     async with Client(REMOTE_URL) as client:
         raw = await client.call_tool("get_running_jobs")
-        assert "Running Jobs on ALCF Polaris" in raw[0].text
+        assert "Running Jobs on ALCF Polaris" in raw.content[0].text
 
 
 @pytest.mark.asyncio
 async def test_system_health_summary():
     async with Client(REMOTE_URL) as client:
         raw = await client.call_tool("system_health_summary")
-        assert "System Health Summary" in raw[0].text
+        assert "System Health Summary" in raw.content[0].text
