@@ -60,7 +60,8 @@ Edit the claude_desktop_config.json file at `~/Library/Application\ Support/Clau
       "command": "/path/to/your/env/python",
       "args": ["/path/to/science-mcps/mcps/globus/compute_server.py"],
       "env": {
-        "GLOBUS_CLIENT_ID": "ee05bbfa-2a1a-4659-95df-ed8946e3aae6",
+        "GLOBUS_CLIENT_ID": "...",
+        "GLOBUS_CLIENT_SECRET": "...",
       }
     }
   }
@@ -135,14 +136,9 @@ Claude will help you:
 
 ### Globus Compute Server Tools
 
-- `compute_authenticate` - Start Globus Compute authentication
-- `complete_compute_auth` - Complete authentication with an auth code
 - `register_function` - Register a Python function with Globus Compute
-- `execute_function` - Run a registered function on an endpoint
-- `check_task_status` - Check status of a compute task
-- `get_task_result` - Get results from a completed task
-- `list_registered_functions` - List your registered functions
-- `create_hello_world` - Create a test function
+- `submit_task` - Submit a function execution task to an endpoint
+- `check_task_status` - Retrieve the status and result of a task
 
 ## Troubleshooting
 
