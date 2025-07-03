@@ -9,4 +9,4 @@ fi
 
 SCRIPT_NAME="${SERVER_NAME}_server.py"
 
-exec conda run --no-capture-output -n science-mcps python "$SCRIPT_NAME"
+exec conda run --no-capture-output -n science-mcps fastmcp run "$SCRIPT_NAME" --transport http --host 0.0.0.0 --port 8000
