@@ -1,235 +1,200 @@
-"""FastMCP server exposing Globus Transfer functionality via Globus SDK."""
-
 import logging
-import os
-from typing import Optional
+from typing import Annotated
 
 import globus_sdk
 from fastmcp import FastMCP
+from fastmcp.exceptions import ToolError
+from pydantic import Field
+
+from auth import get_authorizer
+from schemas import (
+    TransferEndpoint,
+    TransferEvent,
+    TransferFile,
+    TransferSubmitResponse,
+)
 
 logger = logging.getLogger(__name__)
-CLIENT_ID = os.getenv("GLOBUS_CLIENT_ID", "ee05bbfa-2a1a-4659-95df-ed8946e3aae6")
 
-mcp = FastMCP("Globus Transfer Bridge")
-
-
-# Globals – initialised lazily after auth
-transfer_client: Optional[globus_sdk.TransferClient] = None
-auth_client: Optional[globus_sdk.NativeAppAuthClient] = None
+mcp = FastMCP("Globus Transfer MCP Server")
 
 
-@mcp.tool
-async def globus_authenticate() -> str:
-    """Authenticate with Globus and get authorization URL."""
-    global auth_client
+def get_transfer_client():
+    scopes = globus_sdk.TransferClient.scopes.all
+    authorizer = get_authorizer(scopes)
+    return globus_sdk.TransferClient(authorizer=authorizer)
 
-    if not CLIENT_ID.lower():
-        return "❌ Please set the GLOBUS_CLIENT_ID environment variable."
 
-    try:
-        auth_client = globus_sdk.NativeAppAuthClient(CLIENT_ID)
-        auth_client.oauth2_start_flow(
-            requested_scopes=["urn:globus:auth:scope:transfer.api.globus.org:all"]
+def _format_endpoint_search_response(
+    res: globus_sdk.IterableTransferResponse,
+) -> list[TransferEndpoint]:
+    endpoints = []
+    for e in res["DATA"]:
+        e: dict
+        endpoint = TransferEndpoint(
+            endpoint_id=e["id"],
+            display_name=e["display_name"],
+            owner_id=e["owner_id"],
+            owner_string=e["owner_string"],
+            type=e["entity_type"],
+            description=e.get("description"),
         )
-        authorize_url = auth_client.oauth2_get_authorize_url()
-        return (
-            "🔗 **Authorization URL**\n\n"
-            "Visit the link, approve access, then call `complete_globus_auth(<code>)` with the returned code.\n\n "
-            f"{authorize_url}"
-        )
-
-    except Exception as e:
-        logger.error(f"Authentication error: {e}")
-        return f"❌ Authentication failed: {str(e)}"
+        endpoints.append(endpoint)
+    return endpoints
 
 
 @mcp.tool
-async def complete_globus_auth(auth_code: str) -> str:
-    """Complete Globus authentication with the authorization code"""
-    global auth_client, transfer_client
-    if not auth_client:
-        return "❌ Please call globus_authenticate first to start the auth flow."
+def search_endpoints_and_collections(
+    search_filter: Annotated[
+        str, Field(description="Required string to match endpoint fields against.")
+    ],
+    limit: Annotated[int, Field(description="Limit the number of results")],
+) -> list[TransferEndpoint]:
+    """Use a filter string to search all Globus Transfer endpoints and collections that
+    are visible to the user.
+    """
+    tc = get_transfer_client()
 
     try:
-        token_response = auth_client.oauth2_exchange_code_for_tokens(auth_code.strip())
-        transfer_token = token_response.by_resource_server["transfer.api.globus.org"][
-            "access_token"
-        ]
-        authorizer = globus_sdk.AccessTokenAuthorizer(transfer_token)
-        transfer_client = globus_sdk.TransferClient(authorizer=authorizer)
+        r = tc.endpoint_search(filter_fulltext=search_filter, limit=limit)
+    except globus_sdk.GlobusAPIError as e:
+        raise ToolError(f"Search failed: {e}")
 
-        return "✅ **Authentication completed successfully!** You can now use all Globus transfer functions."
-    except Exception as e:
-        logger.error(f"Token exchange error: {e}")
-        return f"❌ Authentication completion failed: {str(e)}"
+    return _format_endpoint_search_response(r)
 
 
 @mcp.tool
-async def list_endpoints(filter_name: str = "") -> str:
-    """List available Globus endpoints"""
-    if not transfer_client:
-        return "❌ Not authenticated. Please run globus_authenticate first."
+def list_my_endpoints_and_collections(
+    limit: Annotated[int, Field(description="Limit the number of results")],
+) -> list[TransferEndpoint]:
+    """List Globus Transfer endpoints and collections for which the user has the
+    'administrator' role
+    """
+    tc = get_transfer_client()
 
     try:
-        # Get endpoints
-        search_filter = filter_name if filter_name else None
-        endpoints = transfer_client.endpoint_search(filter_fulltext=search_filter)
+        r = tc.endpoint_search(filter_scope="administered-by-me", limit=limit)
+    except globus_sdk.GlobusAPIError as e:
+        raise ToolError(f"Search failed: {e}")
 
-        if not endpoints.data:
-            return "No endpoints found matching your criteria."
-
-        result = "📡 **Available Endpoints:**\n\n"
-        for ep in endpoints.data["DATA"][:10]:  # Limit to first 10 results
-            result += f"**{ep['display_name']}**\n"
-            result += f"   📋 ID: `{ep['id']}`\n"
-            result += f"   👤 Owner: {ep['owner_string']}\n"
-            result += f"   📝 Description: {ep.get('description', 'N/A')}\n"
-            result += f"   🔌 Type: {ep.get('entity_type', 'Unknown')}\n"
-            result += "-" * 60 + "\n"
-
-        if len(endpoints.data["DATA"]) > 10:
-            result += f"\n... and {len(endpoints.data['DATA']) - 10} more endpoints. Use filter_name to narrow results."
-
-        return result
-
-    except Exception as e:
-        logger.error(f"Error listing endpoints: {e}")
-        return f"❌ Failed to list endpoints: {str(e)}"
+    return _format_endpoint_search_response(r)
 
 
 @mcp.tool
-async def submit_transfer(
-    source_endpoint: str,
-    dest_endpoint: str,
-    source_path: str,
-    dest_path: str,
-    label: str = "MCP Transfer",
-) -> str:
-    """Submit a transfer job between two Globus endpoints"""
-    if not transfer_client:
-        return "❌ Not authenticated. Please run globus_authenticate first."
+def list_endpoints_and_collections_shared_with_me(
+    limit: Annotated[int, Field(description="Limit the number of results")],
+) -> list[TransferEndpoint]:
+    """List shared Globus Transfer endpoints with permissions that give the user access."""
+    tc = get_transfer_client()
 
     try:
-        # Create transfer data
-        transfer_data = globus_sdk.TransferData(
-            source_endpoint=source_endpoint,
-            destination_endpoint=dest_endpoint,
-            label=label,
-        )
+        r = tc.endpoint_search(filter_scope="shared-with-me", limit=limit)
+    except globus_sdk.GlobusAPIError as e:
+        raise ToolError(f"Search failed: {e}")
 
-        # Add transfer item
-        transfer_data.add_item(source_path=source_path, destination_path=dest_path)
-
-        # Submit the transfer
-        result = transfer_client.submit_transfer(transfer_data)
-
-        return f"""
-🚀 **Transfer Submitted Successfully!**
-
-📋 **Task ID:** `{result["task_id"]}`
-📊 **Status:** {result["message"]}
-🏷️ **Label:** {label}
-📁 **Source:** `{source_path}` on `{source_endpoint}`
-📁 **Destination:** `{dest_path}` on `{dest_endpoint}`
-
-Use check_transfer_status with the Task ID to monitor progress.
-        """.strip()
-
-    except Exception as e:
-        logger.error(f"Transfer submission error: {e}")
-        return f"❌ Transfer submission failed: {str(e)}"
+    return _format_endpoint_search_response(r)
 
 
 @mcp.tool
-async def check_transfer_status(task_id: str) -> str:
-    """Check the status of a Globus transfer job"""
-    if not transfer_client:
-        return "❌ Not authenticated. Please run globus_authenticate first."
+def submit_transfer_task(
+    source_collection_id: Annotated[
+        str, Field(description="ID of the source collection")
+    ],
+    destination_collection_id: Annotated[
+        str, Field(description="ID of the destination collection")
+    ],
+    source_path: Annotated[
+        str, Field(description="Path to the source directory or file of the transfer")
+    ],
+    destination_path: Annotated[
+        str,
+        Field(description="Path to the destination directory or file of the transfer"),
+    ],
+    label: Annotated[
+        str, Field(default="MCP Transfer", description="Label for the transfer task")
+    ],
+) -> TransferSubmitResponse:
+    """Submit a transfer task between two Globus Transfer collections.
 
-    try:
-        # Get task status
-        task = transfer_client.get_task(task_id)
+    Use get_task_events to monitor the task's progress.
+    """
+    tc = get_transfer_client()
 
-        # Format status with emoji
-        status_emoji = {
-            "ACTIVE": "🔄",
-            "SUCCEEDED": "✅",
-            "FAILED": "❌",
-            "INACTIVE": "⏸️",
-        }.get(task["status"], "❓")
-
-        result = f"""
-{status_emoji} **Transfer Status Report**
-
-📋 **Task ID:** `{task["task_id"]}`
-📊 **Status:** {task["status"]}
-🏷️ **Label:** {task["label"]}
-📁 **Files Transferred:** {task.get("files_transferred", 0)}
-📊 **Bytes Transferred:** {task.get("bytes_transferred", 0):,} bytes
-🎯 **Source:** {task.get("source_endpoint_display_name", "Unknown")}
-🎯 **Destination:** {task.get("destination_endpoint_display_name", "Unknown")}
-⏰ **Submitted:** {task.get("request_time", "N/A")}
-⏰ **Completed:** {task.get("completion_time", "In Progress" if task["status"] == "ACTIVE" else "N/A")}
-        """.strip()
-
-        if task["status"] == "FAILED":
-            result += f"\n\n❌ **Error Details:** {task.get('nice_status_details', 'Unknown error')}"
-        elif task["status"] == "ACTIVE":
-            result += (
-                "\n\n🔄 **Progress:** Transfer is currently active and processing..."
-            )
-
-        return result
-
-    except Exception as e:
-        logger.error(f"Status check error: {e}")
-        return f"❌ Failed to check transfer status: {str(e)}"
-
-
-@mcp.tool
-async def list_directory(endpoint_id: str, path: str = "/") -> str:
-    """List contents of a directory on a Globus endpoint"""
-    if not transfer_client:
-        return "❌ Not authenticated. Please run globus_authenticate first."
-
-    try:
-        # List directory contents
-        response = transfer_client.operation_ls(endpoint_id, path=path)
-
-        if not response.data:
-            return f"📁 Directory `{path}` is empty or inaccessible."
-
-        result = f"📁 **Directory listing for `{path}`**\n"
-        result += f"🎯 **Endpoint:** `{endpoint_id}`\n\n"
-
-        # Sort: directories first, then files
-        items = sorted(
-            response.data["DATA"], key=lambda x: (x["type"] != "dir", x["name"].lower())
-        )
-
-        for item in items[:50]:  # Limit to 50 items
-            icon = "📁" if item["type"] == "dir" else "📄"
-            size = f" ({item['size']:,} bytes)" if item.get("size") else ""
-            modified = (
-                f" - {item['last_modified']}" if item.get("last_modified") else ""
-            )
-            result += f"{icon} `{item['name']}`{size}{modified}\n"
-
-        if len(response.data["DATA"]) > 50:
-            result += f"\n... and {len(response.data['DATA']) - 50} more items."
-
-        return result
-
-    except Exception as e:
-        logger.error(f"Directory listing error: {e}")
-        return f"❌ Failed to list directory: {str(e)}"
-
-
-# Entrypoint
-if __name__ == "__main__":
-    mcp.run(
-        transport="streamable-http",
-        host="0.0.0.0",
-        port=8000,
-        path="/mcps/globus-transfer",
+    data = globus_sdk.TransferData(
+        source_endpoint=source_collection_id,
+        destination_endpoint=destination_collection_id,
+        label=label,
     )
+    data.add_item(source_path=source_path, destination_path=destination_path)
+
+    try:
+        r = tc.submit_transfer(data)
+    except globus_sdk.GlobusAPIError as e:
+        raise ToolError(f"Failed to submit transfer: {e}")
+
+    return TransferSubmitResponse(task_id=r.data["task_id"])
+
+
+@mcp.tool
+def get_task_events(
+    task_id: Annotated[str, Field(description="ID of the task")],
+    limit: Annotated[int, Field(description="Limit the number of results")],
+) -> list[TransferEvent]:
+    """Get a list of task events to monitor the status and progress of a task.
+    The events are ordered by time descending (newest first).
+    """
+    tc = get_transfer_client()
+
+    try:
+        r = tc.task_event_list(task_id=task_id, limit=limit)
+    except globus_sdk.GlobusAPIError as e:
+        raise ToolError(f"Failed to get task events: {e}")
+
+    events = []
+    for e in r["DATA"]:
+        event = TransferEvent(
+            code=e["code"],
+            is_error=e["is_error"],
+            description=e["description"],
+            details=e["details"],
+            time=e["time"],
+        )
+        events.append(event)
+
+    return events
+
+
+@mcp.tool
+def list_directory(
+    collection_id: Annotated[str, Field(description="ID of the collection")],
+    path: Annotated[str, Field(description="Path to a directory")],
+    limit: Annotated[int, Field(description="Limit the number of results")],
+) -> list[TransferFile]:
+    """List contents of a directory on a Globus Transfer collection"""
+    tc = get_transfer_client()
+
+    try:
+        r = tc.operation_ls(collection_id, path=path, limit=limit)
+    except globus_sdk.GlobusAPIError as e:
+        raise ToolError(f"Failed to list directory contents: {e}")
+
+    files = []
+    for f in r["DATA"]:
+        f: dict
+        file = TransferFile(
+            name=f["name"],
+            type=f["type"],
+            link_target=f.get("link_target"),
+            user=f.get("user"),
+            group=f.get("group"),
+            permissions=f["permissions"],
+            size=f["size"],
+            last_modified=f["last_modified"],
+        )
+        files.append(file)
+
+    return files
+
+
+if __name__ == "__main__":
+    mcp.run(transport="stdio")

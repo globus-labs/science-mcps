@@ -21,12 +21,11 @@ def get_access_token():
     return auth_header[7:]
 
 
-def get_authorizer():
+def get_authorizer(scopes: str | list[str]):
     client_id, client_secret = get_client_creds()
 
     if client_id and client_secret:
         auth_client = globus_sdk.ConfidentialAppAuthClient(client_id, client_secret)
-        scopes = globus_sdk.ComputeClient.scopes.all
         return globus_sdk.ClientCredentialsAuthorizer(auth_client, scopes)
 
     elif client_id:

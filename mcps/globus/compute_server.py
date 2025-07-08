@@ -20,15 +20,16 @@ from auth import get_authorizer
 
 logger = logging.getLogger(__name__)
 
-mcp = FastMCP("Globus Compute MCP")
+mcp = FastMCP("Globus Compute MCP Server")
 
 
 def get_compute_client():
+    scopes = globus_sdk.ComputeClient.scopes.all
+    authorizer = get_authorizer(scopes)
     serializer = ComputeSerializer(
         # Ensure no dill deserialization on the server
         allowed_deserializer_types=[JSONData, PureSourceTextInspect],
     )
-    authorizer = get_authorizer()
     return Client(authorizer=authorizer, serializer=serializer, do_version_check=False)
 
 
