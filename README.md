@@ -93,16 +93,15 @@ Register a Diaspora topic, produce three messages, and consume the latest messag
 ## Available Tools
 
 ### Globus Transfer Server Tools
-- `globus_authenticate` - Start Globus authentication
-- `complete_globus_auth` - Complete authentication with an auth code
-- `list_endpoints` - List available Globus endpoints
-- `submit_transfer` - Submit a file transfer between endpoints
+- `submit_transfer` - Submit a file transfer between collections
+- `get_task_events` - Get a list of task events to monitor the status and progress of a task
+- `list_directory` - Browse files on a collection
 - And more...
 
 ### Globus Compute Server Tools
-- `compute_authenticate` - Start Globus Compute authentication
 - `register_function` - Register a Python function with Globus Compute
-- `execute_function` - Run a registered function on an endpoint
+- `submit_task` - Submit a function execution task to an endpoint
+- `check_task_status` - Retrieve the status and result of a task
 - And more...
 
 ### ALCF Server Tools

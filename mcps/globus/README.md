@@ -127,12 +127,12 @@ Claude will help you:
 
 ### Globus Transfer Server Tools
 
-- `globus_authenticate` - Start Globus authentication
-- `complete_globus_auth` - Complete authentication with an auth code
-- `list_endpoints` - List available Globus endpoints
-- `submit_transfer` - Submit a file transfer between endpoints
-- `check_transfer_status` - Check status of a transfer task
-- `list_directory` - Browse files on an endpoint
+- `search_endpoints_and_collections` - Search Transfer endpoints and collections
+- `list_my_endpoints_and_collections` - List endpoints and collections I administer
+- `list_endpoints_and_collections_shared_with_me` - List endpoints and collections shared with me
+- `submit_transfer` - Submit a file transfer between collections
+- `get_task_events` - Get a list of task events to monitor the status and progress of a task
+- `list_directory` - Browse files on a collection
 
 ### Globus Compute Server Tools
 
