@@ -1,4 +1,38 @@
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, ConfigDict, Field
+
+
+###
+# Compute
+###
+
+
+class ComputeFunctionRegisterResponse(BaseModel):
+    function_id: str = Field(description="ID of the registered function")
+
+
+class ComputeSubmitResponse(BaseModel):
+    task_id: str = Field(description="ID of the task")
+
+
+class ComputeTask(BaseModel):
+    model_config = ConfigDict()
+
+    task_id: str = Field(description="ID of the task")
+    status: str = Field(description="The status of the task.")
+    result: str | None = Field(
+        description="When the task status is 'success', this will contain the task result.",
+    )
+    exception: str | None = Field(
+        default=None,
+        description=(
+            "When the task status is 'failed', this will contain the exception traceback."
+        ),
+    )
+
+
+###
+# Transfer
+###
 
 
 class TransferEndpoint(BaseModel):
