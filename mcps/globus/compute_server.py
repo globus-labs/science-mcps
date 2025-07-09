@@ -17,6 +17,11 @@ from globus_compute_sdk.serialize import (
 from globus_compute_sdk.serialize.facade import validate_strategylike
 
 from auth import get_authorizer
+from schemas import (
+    ComputeFunctionRegisterResponse,
+    ComputeSubmitResponse,
+    ComputeTask,
+)
 
 logger = logging.getLogger(__name__)
 
@@ -40,7 +45,7 @@ def register_function(
     ],
     function_name: Annotated[str, Field(description="The name of the function")],
     description: Annotated[
-        str, Field(description="An optional description of the function", default="")
+        str, Field(default="", description="An optional description of the function")
     ],
     public: Annotated[
         bool,
@@ -49,7 +54,7 @@ def register_function(
             default=False,
         ),
     ],
-):
+) -> ComputeFunctionRegisterResponse:
     """Register a Python function with Globus Compute.
 
     Use submit_task to run the registered function on an endpoint.
@@ -78,7 +83,7 @@ def register_function(
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Function registration failed: {e}")
 
-    return {"function_id": r.data["function_uuid"]}
+    return ComputeFunctionRegisterResponse(function_id=r.data["function_uuid"])
 
 
 @mcp.tool
@@ -93,7 +98,7 @@ def submit_task(
     function_kwargs: Annotated[
         Dict[str, Any], Field(description="Keyword arguments for the function")
     ],
-):
+) -> ComputeSubmitResponse:
     """Submit a function execution task to a Globus Compute endpoint.
 
     Use get_task_status to monitor progress and retrieve results.
@@ -111,19 +116,14 @@ def submit_task(
         raise ToolError(f"Execution failed: {e}")
 
     task_id = r["tasks"][function_id][0]
-    return {"task_id": task_id}
+    return ComputeSubmitResponse(task_id=task_id)
 
 
 @mcp.tool
 def get_task_status(
     task_id: Annotated[str, Field(description="The ID of the task")],
-):
-    """Retrieve the status and result of a Globus Compute task.
-
-    - If the status is 'success', the 'result' field will include the result.
-    - If the status is 'failed', the task has completed with errors. The
-      'exception' field will include the traceback.
-    """
+) -> ComputeTask:
+    """Retrieve the status and result of a Globus Compute task."""
     gcc = get_compute_client()
 
     try:
@@ -131,23 +131,19 @@ def get_task_status(
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Failed to retrieve task result: {e}")
 
-    result = r.data.get("result")
+    result = r.get("result")
     if result:
         try:
             result = gcc.fx_serializer.deserialize(result)
         except Exception:
             raise ToolError("Unable to deserialize result")
 
-    ret = {
-        "task_id": r.data["task_id"],
-        "status": r.data["status"],
-        "result": result,
-    }
-    exc = r.data.get("exception")
-    if exc:
-        ret["exception"] = exc
-
-    return ret
+    return ComputeTask(
+        task_id=r.data["task_id"],
+        status=r.data["status"],
+        result=result,
+        exception=r.get("exception"),
+    )
 
 
 if __name__ == "__main__":
