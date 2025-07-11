@@ -39,25 +39,26 @@ def get_compute_client():
 
 
 @mcp.tool
-def register_function(
+def register_python_function(
     function_code: Annotated[
-        str, Field(description="The text of the function source code")
+        str, Field(description="The text of the Python function source code")
     ],
-    function_name: Annotated[str, Field(description="The name of the function")],
+    function_name: Annotated[str, Field(description="The name of the Python function")],
     description: Annotated[
-        str, Field(default="", description="An optional description of the function")
+        str,
+        Field(description="An optional description of the Python function", default=""),
     ],
     public: Annotated[
         bool,
         Field(
-            description="Indicates whether the function can be used by others",
+            description="Indicates whether the Python function can be used by others",
             default=False,
         ),
     ],
 ) -> ComputeFunctionRegisterResponse:
     """Register a Python function with Globus Compute.
 
-    Use submit_task to run the registered function on an endpoint.
+    Use submit_task to run the registered Python function on an endpoint.
     """
     gcc = get_compute_client()
 
@@ -81,9 +82,51 @@ def register_function(
     try:
         r = gcc._compute_web_client.v3.register_function(data)
     except globus_sdk.GlobusAPIError as e:
-        raise ToolError(f"Function registration failed: {e}")
+        raise ToolError(f"Python function registration failed: {e}")
 
     return ComputeFunctionRegisterResponse(function_id=r.data["function_uuid"])
+
+
+@mcp.tool
+def register_shell_command(
+    command: Annotated[str, Field(description="The text of the shell command")],
+    description: Annotated[
+        str,
+        Field(description="An optional description of the shell command", default=""),
+    ],
+    public: Annotated[
+        bool,
+        Field(
+            description="Indicates whether the shell command can be used by others",
+            default=False,
+        ),
+    ],
+):
+    """Register a shell command with Globus Compute.
+
+    Use submit_task to run the registered shell command on an endpoint.
+    """
+    function_name = "run_shell_command"
+    function_template = """
+def run_shell_command(*args, **kwargs):
+    import subprocess
+
+    completed = subprocess.run(
+        ["/bin/bash", "-c", "{command}"], capture_output=True
+    )
+    return {
+        "stdout": completed.stdout,
+        "stderr": completed.stderr,
+        "returncode": completed.returncode,
+    }
+"""
+    function_code = function_template.format(command=command)
+    return register_python_function(
+        function_code=function_code,
+        function_name=function_name,
+        description=description,
+        public=public,
+    )
 
 
 @mcp.tool
