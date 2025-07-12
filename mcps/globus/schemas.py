@@ -1,4 +1,4 @@
-from pydantic import BaseModel, ConfigDict, Field
+from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 
 ###
@@ -19,7 +19,7 @@ class ComputeTask(BaseModel):
 
     task_id: str = Field(description="ID of the task")
     status: str = Field(description="The status of the task.")
-    result: str | None = Field(
+    result: JsonValue = Field(
         description="When the task status is 'success', this will contain the task result.",
     )
     exception: str | None = Field(

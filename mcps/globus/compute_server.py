@@ -38,6 +38,27 @@ def get_compute_client():
     return Client(authorizer=authorizer, serializer=serializer, do_version_check=False)
 
 
+def _format_function_payload(
+    function_name: str, function_code: str, description: str, public: bool
+):
+    # Simulate PureSourceTextInspect strategy
+    serde_iden = "st"
+    serialized = f"{serde_iden}\n{function_name}:{function_code}"
+    packed = ComputeSerializer.pack_buffers([serialized])
+
+    return {
+        "function_name": function_name,
+        "function_code": packed,
+        "description": description,
+        "meta": {
+            "python_version": platform.python_version(),
+            "sdk_version": globus_compute_sdk.__version__,
+            "serde_identifier": serde_iden,
+        },
+        "public": public,
+    }
+
+
 @mcp.tool
 def register_python_function(
     function_code: Annotated[
@@ -61,23 +82,7 @@ def register_python_function(
     Use submit_task to run the registered Python function on an endpoint.
     """
     gcc = get_compute_client()
-
-    # Simulate PureSourceTextInspect strategy
-    serde_iden = "st"
-    serialized = f"{serde_iden}\n{function_name}:{function_code}"
-    packed = ComputeSerializer.pack_buffers([serialized])
-
-    data = {
-        "function_name": function_name,
-        "function_code": packed,
-        "description": description,
-        "meta": {
-            "python_version": platform.python_version(),
-            "sdk_version": globus_compute_sdk.__version__,
-            "serde_identifier": serde_iden,
-        },
-        "public": public,
-    }
+    data = _format_function_payload(function_name, function_code, description, public)
 
     try:
         r = gcc._compute_web_client.v3.register_function(data)
@@ -106,27 +111,29 @@ def register_shell_command(
 
     Use submit_task to run the registered shell command on an endpoint.
     """
-    function_name = "run_shell_command"
-    function_template = """
-def run_shell_command(*args, **kwargs):
-    import subprocess
+    gcc = get_compute_client()
 
+    function_name = "run_shell_command"
+    function_code = f"""
+def {function_name}(*args, **kwargs):
+    import subprocess
     completed = subprocess.run(
         ["/bin/bash", "-c", "{command}"], capture_output=True
     )
-    return {
-        "stdout": completed.stdout,
-        "stderr": completed.stderr,
+    return {{
+        "stdout": completed.stdout.decode("utf-8"),
+        "stderr": completed.stderr.decode("utf-8"),
         "returncode": completed.returncode,
-    }
+    }}
 """
-    function_code = function_template.format(command=command)
-    return register_python_function(
-        function_code=function_code,
-        function_name=function_name,
-        description=description,
-        public=public,
-    )
+    data = _format_function_payload(function_name, function_code, description, public)
+
+    try:
+        r = gcc._compute_web_client.v3.register_function(data)
+    except globus_sdk.GlobusAPIError as e:
+        raise ToolError(f"Shell command registration failed: {e}")
+
+    return ComputeFunctionRegisterResponse(function_id=r.data["function_uuid"])
 
 
 @mcp.tool
