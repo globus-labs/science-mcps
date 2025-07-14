@@ -136,7 +136,8 @@ Claude will help you:
 
 ### Globus Compute Server Tools
 
-- `register_function` - Register a Python function with Globus Compute
+- `register_python_function` - Register a Python function with Globus Compute
+- `register_shell_command` - Register a shell command function with Globus Compute
 - `submit_task` - Submit a function execution task to an endpoint
 - `check_task_status` - Retrieve the status and result of a task
 
