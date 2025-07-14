@@ -29,6 +29,9 @@
 
    # For Diaspora server
    pip install -r mcps/diaspora/requirements.txt
+
+   # For Garden server
+   pip install -r mcps/garden/requirements.txt
    ```
 
 ## Setting up MCP Servers in Claude Desktop

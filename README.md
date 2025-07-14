@@ -41,6 +41,15 @@ The Diaspora MCP server enable AI assistants to:
 
 [Learn more about the Diaspora MCP Server](mcps/diaspora/README.md)
 
+### Garden MCP Server
+
+The Garden MCP server enable AI assistants to:
+
+- **Discover AI Model Gardens** - Search Garden's registry of domain-specific AI-for-science models.
+- **Run Models** - Run inference on Garden models.
+
+[Learn more about the Garden MCP Server](mcps/garden/README.md)
+
 ## Use hosted MCPs (recommended)
 
 Connecting to our hosted MCP servers is the fastest way to get started—no local installation or maintenance required.
