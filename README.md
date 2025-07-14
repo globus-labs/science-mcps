@@ -99,7 +99,7 @@ Register a Diaspora topic, produce three messages, and consume the latest messag
 - And more...
 
 ### Globus Compute Server Tools
-- `register_function` - Register a Python function with Globus Compute
+- `register_python_function` - Register a Python function with Globus Compute
 - `submit_task` - Submit a function execution task to an endpoint
 - `check_task_status` - Retrieve the status and result of a task
 - And more...

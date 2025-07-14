@@ -38,35 +38,15 @@ def get_compute_client():
     return Client(authorizer=authorizer, serializer=serializer, do_version_check=False)
 
 
-@mcp.tool
-def register_function(
-    function_code: Annotated[
-        str, Field(description="The text of the function source code")
-    ],
-    function_name: Annotated[str, Field(description="The name of the function")],
-    description: Annotated[
-        str, Field(default="", description="An optional description of the function")
-    ],
-    public: Annotated[
-        bool,
-        Field(
-            description="Indicates whether the function can be used by others",
-            default=False,
-        ),
-    ],
-) -> ComputeFunctionRegisterResponse:
-    """Register a Python function with Globus Compute.
-
-    Use submit_task to run the registered function on an endpoint.
-    """
-    gcc = get_compute_client()
-
+def _format_function_payload(
+    function_name: str, function_code: str, description: str, public: bool
+):
     # Simulate PureSourceTextInspect strategy
     serde_iden = "st"
     serialized = f"{serde_iden}\n{function_name}:{function_code}"
     packed = ComputeSerializer.pack_buffers([serialized])
 
-    data = {
+    return {
         "function_name": function_name,
         "function_code": packed,
         "description": description,
@@ -78,10 +58,88 @@ def register_function(
         "public": public,
     }
 
+
+@mcp.tool
+def register_python_function(
+    function_code: Annotated[
+        str, Field(description="The text of the Python function source code")
+    ],
+    function_name: Annotated[str, Field(description="The name of the Python function")],
+    description: Annotated[
+        str,
+        Field(description="An optional description of the Python function", default=""),
+    ],
+    public: Annotated[
+        bool,
+        Field(
+            description="Indicates whether the Python function can be used by others",
+            default=False,
+        ),
+    ],
+) -> ComputeFunctionRegisterResponse:
+    """Register a Python function with Globus Compute.
+
+    Use submit_task to run the registered Python function on an endpoint.
+    """
+    gcc = get_compute_client()
+    data = _format_function_payload(function_name, function_code, description, public)
+
     try:
         r = gcc._compute_web_client.v3.register_function(data)
     except globus_sdk.GlobusAPIError as e:
-        raise ToolError(f"Function registration failed: {e}")
+        raise ToolError(f"Python function registration failed: {e}")
+
+    return ComputeFunctionRegisterResponse(function_id=r.data["function_uuid"])
+
+
+@mcp.tool
+def register_shell_command(
+    command: Annotated[
+        str,
+        Field(
+            description=(
+                "The shell command string, which may contain variables to be replaced"
+                " with kwargs provided in each submit call (e.g. `echo {foo}`)."
+            )
+        ),
+    ],
+    description: Annotated[
+        str,
+        Field(description="An optional description of the shell command", default=""),
+    ],
+    public: Annotated[
+        bool,
+        Field(
+            description="Indicates whether the shell command can be used by others",
+            default=False,
+        ),
+    ],
+):
+    """Register a shell command function with Globus Compute.
+
+    Use submit_task to run the registered shell command on an endpoint.
+    """
+    gcc = get_compute_client()
+
+    function_name = "run_shell_command"
+    function_code = f"""
+def {function_name}(**kwargs):
+    import subprocess
+    completed = subprocess.run(
+        ["/bin/bash", "-c", "{command}".format(**kwargs)], capture_output=True
+    )
+    return {{
+        "stdout": completed.stdout.decode("utf-8"),
+        "stderr": completed.stderr.decode("utf-8"),
+        "returncode": completed.returncode,
+    }}
+"""
+    data = _format_function_payload(function_name, function_code, description, public)
+
+    try:
+        r = gcc._compute_web_client.v3.register_function(data)
+    except globus_sdk.GlobusAPIError as e:
+        raise ToolError(f"Shell command registration failed: {e}")
 
     return ComputeFunctionRegisterResponse(function_id=r.data["function_uuid"])
 
