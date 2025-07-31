@@ -235,7 +235,7 @@ async def check_alcf_status_json(ctx: Context) -> str:
     uri = "alcf://polaris/status"
     await ctx.info(f"Fetching status JSON from {uri}")
     res = await ctx.read_resource(uri)
-    return res
+    return res[0].content
 
 
 @mcp.tool
@@ -243,7 +243,7 @@ async def check_alcf_status(ctx: Context) -> str:
     uri = "alcf://polaris/status/summary"
     await ctx.info(f"Fetching status summary from {uri}")
     res = await ctx.read_resource(uri)
-    return res
+    return res[0].content
 
 
 @mcp.tool(enabled=False)
@@ -251,7 +251,7 @@ async def get_running_jobs_json(ctx: Context) -> str:
     uri = "alcf://polaris/jobs"
     await ctx.info(f"Fetching job activity JSON from {uri}")
     res = await ctx.read_resource(uri)
-    return res
+    return res[0].content
 
 
 @mcp.tool
@@ -259,7 +259,7 @@ async def get_running_jobs(ctx: Context) -> str:
     uri = "alcf://polaris/jobs/summary"
     await ctx.info(f"Fetching job activity summary from {uri}")
     res = await ctx.read_resource(uri)
-    return res
+    return res[0].content
 
 
 @mcp.tool
@@ -267,10 +267,13 @@ async def system_health_summary(ctx: Context) -> str:
     uri = "alcf://polaris/status/health"
     await ctx.info(f"Fetching health summary from {uri}")
     res = await ctx.read_resource(uri)
-    return res
+    return res[0].content
 
 
 if __name__ == "__main__":
-    mcp.run(
-        transport="streamable-http", host="0.0.0.0", port=8000, path="/mcps/alcf-status"
-    )
+    mcp.run(transport="stdio")
+
+# if __name__ == "__main__":
+#     mcp.run(
+#         transport="streamable-http", host="0.0.0.0", port=8000, path="/mcps/alcf-status"
+#     )

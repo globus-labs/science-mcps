@@ -176,7 +176,7 @@ async def get_nersc_status(ctx: Context) -> str:
     uri = "nersc://status/systems/summary"
     await ctx.info(f"Fetching system status from {uri}")
     res = await ctx.read_resource(uri)
-    return res
+    return res[0].content
 
 
 @mcp.tool(enabled=False)
@@ -185,7 +185,7 @@ async def get_nersc_status_individual_json(system: str, ctx: Context) -> str:
     uri = f"nersc://status/{system}"
     await ctx.info(f"Fetching system status from {uri}")
     res = await ctx.read_resource(uri)
-    return res
+    return res[0].content
 
 
 @mcp.tool
@@ -194,7 +194,7 @@ async def get_nersc_status_individual(system: str, ctx: Context) -> str:
     uri = f"nersc://status/{system}/summary"
     await ctx.info(f"Fetching system summary from {uri}")
     res = await ctx.read_resource(uri)
-    return res
+    return res[0].content
 
 
 @mcp.tool
@@ -203,7 +203,7 @@ async def check_system_availability(system: str, ctx: Context) -> str:
     uri = f"nersc://status/{system}/get_availability"
     await ctx.info(f"Checking availability at {uri}")
     res = await ctx.read_resource(uri)
-    return res
+    return res[0].content
 
 
 @mcp.tool
@@ -212,13 +212,16 @@ async def get_maintenance_info(system: str, ctx: Context) -> str:
     uri = f"nersc://status/{system}/get_maintenance"
     await ctx.info(f"Checking maintenance at {uri}")
     res = await ctx.read_resource(uri)
-    return res
+    return res[0].content
 
 
 if __name__ == "__main__":
-    mcp.run(
-        transport="streamable-http",
-        host="0.0.0.0",
-        port=8000,
-        path="/mcps/nersc-status",
-    )
+    mcp.run(transport="stdio")
+
+# if __name__ == "__main__":
+#     mcp.run(
+#         transport="streamable-http",
+#         host="0.0.0.0",
+#         port=8000,
+#         path="/mcps/nersc-status",
+#     )
