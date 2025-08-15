@@ -6,6 +6,13 @@ from pydantic import BaseModel, ConfigDict, Field, JsonValue
 ###
 
 
+class ComputeEndpoint(BaseModel):
+    endpoint_id: str = Field(description="ID of the endpoint")
+    name: str = Field(description="The endpoint name")
+    display_name: str = Field(description="Friendly name for the endpoint")
+    owner_id: str = Field(description="ID of the endpoint owner")
+
+
 class ComputeFunctionRegisterResponse(BaseModel):
     function_id: str = Field(description="ID of the registered function")
 

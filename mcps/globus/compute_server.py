@@ -18,6 +18,7 @@ from globus_compute_sdk.serialize.facade import validate_strategylike
 
 from auth import get_authorizer
 from schemas import (
+    ComputeEndpoint,
     ComputeFunctionRegisterResponse,
     ComputeSubmitResponse,
     ComputeTask,
@@ -57,6 +58,29 @@ def _format_function_payload(
         },
         "public": public,
     }
+
+
+@mcp.tool
+def list_my_endpoints() -> list[ComputeEndpoint]:
+    """List Globus Compute endpoints that the user owns."""
+    gcc = get_compute_client()
+
+    try:
+        r = gcc.get_endpoints()
+    except globus_sdk.GlobusAPIError as e:
+        raise ToolError(f"Failed to get endpoints: {e}")
+
+    endpoints = []
+    for ep in r:
+        endpoint = ComputeEndpoint(
+            endpoint_id=ep["uuid"],
+            name=ep["name"],
+            display_name=ep["display_name"],
+            owner_id=ep["owner"],
+        )
+        endpoints.append(endpoint)
+
+    return endpoints
 
 
 @mcp.tool
