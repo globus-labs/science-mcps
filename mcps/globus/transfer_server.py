@@ -6,7 +6,7 @@ from fastmcp import FastMCP
 from fastmcp.exceptions import ToolError
 from pydantic import Field
 
-from auth import get_authorizer
+from auth import get_globus_app
 from schemas import (
     TransferEndpoint,
     TransferEvent,
@@ -20,9 +20,8 @@ mcp = FastMCP("Globus Transfer MCP Server")
 
 
 def get_transfer_client():
-    scopes = globus_sdk.TransferClient.scopes.all
-    authorizer = get_authorizer(scopes)
-    return globus_sdk.TransferClient(authorizer=authorizer)
+    app = get_globus_app()
+    return globus_sdk.TransferClient(app=app)
 
 
 def _format_endpoint_search_response(

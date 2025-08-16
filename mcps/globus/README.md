@@ -58,11 +58,7 @@ Edit the claude_desktop_config.json file at `~/Library/Application\ Support/Clau
   "mcpServers": {
     "globus-compute-mcp": {
       "command": "/path/to/your/env/python",
-      "args": ["/path/to/science-mcps/mcps/globus/compute_server.py"],
-      "env": {
-        "GLOBUS_CLIENT_ID": "...",
-        "GLOBUS_CLIENT_SECRET": "...",
-      }
+      "args": ["/path/to/science-mcps/mcps/globus/compute_server.py"]
     }
   }
 }
@@ -81,10 +77,7 @@ Edit the claude_desktop_config.json file at `~/Library/Application\ Support/Clau
     ...,
     "globus-transfer-mcp": {
       "command": "/path/to/your/env/python",
-      "args": ["/path/to/science-mcps/mcps/globus/transfer_server.py"],
-      "env": {
-        "GLOBUS_CLIENT_ID": "ee05bbfa-2a1a-4659-95df-ed8946e3aae6",
-      }
+      "args": ["/path/to/science-mcps/mcps/globus/transfer_server.py"]
     }
   }
 }

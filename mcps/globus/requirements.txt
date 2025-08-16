@@ -1,2 +1,3 @@
 fastmcp
 globus-compute-sdk
+globus-sdk
