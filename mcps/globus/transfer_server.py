@@ -1,5 +1,5 @@
 import logging
-from typing import Annotated
+from typing import Annotated, Callable
 
 import globus_sdk
 from fastmcp import FastMCP
@@ -22,6 +22,23 @@ mcp = FastMCP("Globus Transfer MCP Server")
 def get_transfer_client():
     app = get_globus_app()
     return globus_sdk.TransferClient(app=app)
+
+
+def handle_gare(
+    client_method: Callable[..., globus_sdk.GlobusHTTPResponse],
+    *args,
+    **kwargs,
+) -> globus_sdk.GlobusHTTPResponse:
+    client: globus_sdk.TransferClient = client_method.__self__
+    try:
+        return client_method(*args, **kwargs)
+    except globus_sdk.GlobusAPIError as e:
+        if e.http_status == 403 and e.code == "ConsentRequired":
+            scopes = e.info.consent_required.required_scopes
+            for scope in scopes:
+                client.add_app_scope(scope)
+            return client_method(*args, **kwargs)
+        raise
 
 
 def _format_endpoint_search_response(
@@ -127,7 +144,7 @@ def submit_transfer_task(
     data.add_item(source_path=source_path, destination_path=destination_path)
 
     try:
-        r = tc.submit_transfer(data)
+        r = handle_gare(tc.submit_transfer, data)
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Failed to submit transfer: {e}")
 
@@ -173,7 +190,7 @@ def list_directory(
     tc = get_transfer_client()
 
     try:
-        r = tc.operation_ls(collection_id, path=path, limit=limit)
+        r = handle_gare(tc.operation_ls, collection_id, path=path, limit=limit)
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Failed to list directory contents: {e}")
 
