@@ -16,7 +16,7 @@ from globus_compute_sdk.serialize import (
 )
 from globus_compute_sdk.serialize.facade import validate_strategylike
 
-from auth import get_authorizer
+from auth import get_globus_app
 from schemas import (
     ComputeEndpoint,
     ComputeFunctionRegisterResponse,
@@ -30,13 +30,12 @@ mcp = FastMCP("Globus Compute MCP Server")
 
 
 def get_compute_client():
-    scopes = globus_sdk.ComputeClient.scopes.all
-    authorizer = get_authorizer(scopes)
+    app = get_globus_app()
     serializer = ComputeSerializer(
         # Ensure no dill deserialization on the server
         allowed_deserializer_types=[JSONData, PureSourceTextInspect],
     )
-    return Client(authorizer=authorizer, serializer=serializer, do_version_check=False)
+    return Client(app=app, serializer=serializer, do_version_check=False)
 
 
 def _format_function_payload(
