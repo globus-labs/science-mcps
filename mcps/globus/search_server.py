@@ -22,6 +22,8 @@ mcp = FastMCP("Globus Search MCP Server")
 
 def get_search_client():
     app = get_globus_app()
+    search_scope = globus_sdk.scopes.SearchScopes.all
+    app.add_scope_requirements({'search.api.globus.org': search_scope})
     return globus_sdk.SearchClient(app=app)
 
 
@@ -64,7 +66,7 @@ def _format_index_list_response(
             status=idx_data["status"],
             size=idx_data.get("size"),
             num_subjects=idx_data.get("num_subjects"),
-            owner=idx_data["owner"],
+            owner=idx_data.get("owner") or idx_data.get("owner_id"),
         )
         indices.append(index)
     return indices
@@ -125,7 +127,7 @@ def get_index_info(
         status=idx_data["status"],
         size=idx_data.get("size"),
         num_subjects=idx_data.get("num_subjects"),
-        owner=idx_data["owner"],
+        owner=idx_data.get("owner") or idx_data.get("owner_id"),
     )
 
 

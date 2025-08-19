@@ -121,7 +121,7 @@ class SearchIndex(BaseModel):
     num_subjects: int | None = Field(
         default=None, description="Number of subjects in the index"
     )
-    owner: str = Field(description="ID of the index owner")
+    owner: str | None = Field(default=None, description="ID of the index owner")
 
 
 class SearchCreateIndexResponse(BaseModel):
