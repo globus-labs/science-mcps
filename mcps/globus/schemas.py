@@ -103,3 +103,57 @@ class TransferFile(BaseModel):
             " timezone."
         )
     )
+
+
+###
+# Search
+###
+
+
+class SearchIndex(BaseModel):
+    index_id: str = Field(description="ID of the search index")
+    display_name: str = Field(description="Display name of the index")
+    description: str | None = Field(
+        default=None, description="Description of the index"
+    )
+    status: str = Field(description="Status of the index (open, closed, etc.)")
+    size: int | None = Field(default=None, description="Size of the index in bytes")
+    num_subjects: int | None = Field(
+        default=None, description="Number of subjects in the index"
+    )
+    owner: str = Field(description="ID of the index owner")
+
+
+class SearchCreateIndexResponse(BaseModel):
+    index_id: str = Field(description="ID of the created search index")
+
+
+class SearchIngestResponse(BaseModel):
+    task_id: str = Field(description="ID of the ingestion task")
+
+
+class SearchEntry(BaseModel):
+    model_config = ConfigDict()
+
+    entry_id: str | None = Field(default=None, description="ID of the search entry")
+    content: JsonValue = Field(description="Content of the search entry")
+
+
+class SearchSubject(BaseModel):
+    subject: str = Field(description="Subject identifier")
+    entries: list[SearchEntry] = Field(description="List of entries for this subject")
+
+
+class SearchResult(BaseModel):
+    gmeta: list[SearchSubject] = Field(description="Search results in GMetaList format")
+    total: int = Field(description="Total number of results")
+    offset: int = Field(description="Offset of current results")
+    limit: int = Field(description="Limit used for current results")
+
+
+class SearchIngestTask(BaseModel):
+    task_id: str = Field(description="ID of the ingestion task")
+    status: str = Field(description="Status of the ingestion task")
+    message: str | None = Field(
+        default=None, description="Message about the task status"
+    )
