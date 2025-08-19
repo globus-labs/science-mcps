@@ -4,11 +4,13 @@ This repository contains Model Context Protocol (MCP) servers that enable Claude
 
 ## Overview
 
-The repository provides two Globus MCP servers:
+The repository provides three Globus MCP servers:
 
 1. **Globus Compute MCP Server** - Enables AI assistants to register and execute Python functions on remote Globus Compute endpoints (formerly FuncX).
 
 2. **Globus Transfer MCP Server** - Allows AI assistants to transfer files between Globus endpoints, browse endpoint directories, and manage transfer tasks.
+
+3. **Globus Search MCP Server** - Provides AI assistants with the ability to create search indices, ingest documents, and perform powerful searches across Globus Search indexes.
 
 These servers implement the [Model Context Protocol (MCP)](https://github.com/anthropics/anthropic-cookbook/tree/main/mcp), which allows AI assistants like Claude to interact with external tools and services.
 
@@ -83,6 +85,22 @@ Edit the claude_desktop_config.json file at `~/Library/Application\ Support/Clau
 }
 ```
 
+### For Globus Search Server:
+
+Edit the claude_desktop_config.json file at `~/Library/Application\ Support/Claude/claude_desktop_config.json`. Make sure you correct the path information:
+
+```json
+{
+  "mcpServers": {
+    ...,
+    "globus-search-mcp": {
+      "command": "/path/to/your/env/python",
+      "args": ["/path/to/science-mcps/mcps/globus/search_server.py"]
+    }
+  }
+}
+```
+
 ## Usage
 
 Once configured, you can use these servers with Claude by asking it to perform Globus-related tasks. Claude will automatically use the appropriate MCP server tools.
@@ -116,6 +134,21 @@ Claude will help you:
 4. Execute it on a specified endpoint
 5. Retrieve and display the results
 
+### Globus Search Example
+
+You can ask Claude to:
+
+```
+Create a search index and publish research data for discovery
+```
+
+Claude will help you:
+1. Authenticate with Globus
+2. Create a new search index
+3. Ingest documents with metadata
+4. Perform searches across your data
+5. Manage visibility and access permissions
+
 ## Available Tools
 
 ### Globus Transfer Server Tools
@@ -129,10 +162,25 @@ Claude will help you:
 
 ### Globus Compute Server Tools
 
+- `list_my_endpoints` - List Globus Compute endpoints that the user owns
 - `register_python_function` - Register a Python function with Globus Compute
 - `register_shell_command` - Register a shell command function with Globus Compute
 - `submit_task` - Submit a function execution task to an endpoint
-- `check_task_status` - Retrieve the status and result of a task
+- `get_task_status` - Retrieve the status and result of a task
+
+### Globus Search Server Tools
+
+- `create_index` - Create a new Globus Search index
+- `list_my_indices` - List search indices that the user has access to
+- `get_index_info` - Get detailed information about a specific search index
+- `delete_index` - Delete a search index (owner only)
+- `ingest_document` - Ingest a single document into a search index
+- `ingest_documents` - Ingest multiple documents into a search index
+- `get_ingestion_status` - Get the status of a document ingestion task
+- `delete_subject` - Delete a subject and all its entries from a search index
+- `search_index` - Search for documents using a simple query string
+- `advanced_search` - Perform advanced search with filters, facets, and sorting
+- `get_subject` - Get detailed information about a specific subject
 
 ## Troubleshooting
 

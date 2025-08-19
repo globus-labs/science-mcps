@@ -20,6 +20,7 @@ The Globus MCP servers enable AI assistants to:
 
 - **Globus Transfer** - Transfer files between Globus endpoints, browse directories, and manage transfer tasks
 - **Globus Compute** - Register and execute Python functions on remote Globus Compute endpoints (formerly FuncX)
+- **Globus Search** - Create search indices, ingest documents, and perform powerful searches across Globus Search indexes
 
 [Learn more about Globus MCP Servers](mcps/globus/README.md)
 
@@ -75,6 +76,13 @@ You can ask Claude to:
 Run a Python function on a Globus Compute endpoint
 ```
 
+### Globus Search
+
+You can ask Claude to:
+```
+Create a search index and publish research data for discovery
+```
+
 ### ALCF Status
 
 You can ask Claude to:
@@ -107,7 +115,14 @@ Register a Diaspora topic, produce three messages, and consume the latest messag
 ### Globus Compute Server Tools
 - `register_python_function` - Register a Python function with Globus Compute
 - `submit_task` - Submit a function execution task to an endpoint
-- `check_task_status` - Retrieve the status and result of a task
+- `get_task_status` - Retrieve the status and result of a task
+- And more...
+
+### Globus Search Server Tools
+- `create_index` - Create a new Globus Search index
+- `ingest_document` - Ingest a single document into a search index
+- `search_index` - Search for documents using a simple query string
+- `advanced_search` - Perform advanced search with filters, facets, and sorting
 - And more...
 
 ### ALCF Server Tools
