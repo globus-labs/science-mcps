@@ -50,17 +50,14 @@ The Garden MCP server enable AI assistants to:
 
 [Learn more about the Garden MCP Server](mcps/garden/README.md)
 
-## Use hosted MCPs (recommended)
+## Installation and Setup
 
-Connecting to our hosted MCP servers is the fastest way to get started—no local installation or maintenance required.
+To use these MCP servers with Claude Desktop, you'll need to deploy them locally:
 
 1. Open **Claude Desktop** and go to **Settings → Developers**.
-2. Click **Edit Config** and paste [the hosted MCPs configuration](/docs/hosted-mcps.md).
-3. Restart **Claude Desktop**.
-
-## Deploy Locally
-
-See [local deployment configuration](/docs/local-mcps.md).
+2. Click **Edit Config** to configure your MCP servers.
+3. Follow the [local deployment guide](/docs/local-mcps.md) for detailed setup instructions.
+4. Restart **Claude Desktop**.
 
 ## Usage Examples
 
