@@ -1,3 +1,4 @@
+from typing import Dict
 from pydantic import BaseModel, ConfigDict, Field, JsonValue
 
 
@@ -157,3 +158,64 @@ class SearchIngestTask(BaseModel):
     message: str | None = Field(
         default=None, description="Message about the task status"
     )
+
+
+###
+# Flows
+###
+
+
+class FlowDefinition(BaseModel):
+    model_config = ConfigDict()
+
+    start_at: str = Field(description="Starting state name")
+    states: Dict[str, JsonValue] = Field(description="State definitions")
+    comment: str | None = Field(default=None, description="Flow description")
+
+
+class Flow(BaseModel):
+    model_config = ConfigDict()
+
+    flow_id: str = Field(description="Flow UUID")
+    title: str = Field(description="Flow title")
+    definition: JsonValue = Field(description="Flow definition")
+    input_schema: JsonValue | None = Field(
+        default=None, description="Input schema for the flow"
+    )
+    subtitle: str | None = Field(default=None, description="Flow subtitle")
+    owner_id: str | None = Field(default=None, description="Flow owner ID")
+    created_at: str | None = Field(default=None, description="Flow creation timestamp")
+    updated_at: str | None = Field(default=None, description="Flow update timestamp")
+
+
+class FlowCreateResponse(BaseModel):
+    flow_id: str = Field(description="ID of the created flow")
+
+
+class FlowRun(BaseModel):
+    model_config = ConfigDict()
+
+    run_id: str = Field(description="Run UUID")
+    flow_id: str = Field(description="Associated flow ID")
+    status: str = Field(description="Run status (ACTIVE, SUCCEEDED, FAILED, etc.)")
+    start_time: str | None = Field(default=None, description="Run start time")
+    completion_time: str | None = Field(
+        default=None, description="Run completion time"
+    )
+    details: JsonValue | None = Field(
+        default=None, description="Run execution details"
+    )
+
+
+class FlowRunResponse(BaseModel):
+    run_id: str = Field(description="ID of the started flow run")
+
+
+class FlowRunLog(BaseModel):
+    model_config = ConfigDict()
+
+    time: str = Field(description="Log entry timestamp")
+    task_name: str = Field(description="Name of the task that generated the log")
+    message: str = Field(description="Log message")
+    level: str | None = Field(default=None, description="Log level")
+    details: JsonValue | None = Field(default=None, description="Additional log details")
