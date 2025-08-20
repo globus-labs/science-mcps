@@ -2,7 +2,7 @@ import logging
 import platform
 
 from pydantic import Field
-from typing import Annotated, Any, Dict, Tuple
+from typing import Annotated, Any, Dict, Literal, Tuple
 
 import globus_sdk
 import globus_compute_sdk
@@ -60,12 +60,25 @@ def _format_function_payload(
 
 
 @mcp.tool
-def list_my_endpoints() -> list[ComputeEndpoint]:
-    """List Globus Compute endpoints that the user owns."""
+def list_my_endpoints(
+    role: Annotated[
+        Literal["any", "owner"],
+        Field(
+            default="any",
+            description=(
+                "Filter returned list by the user's association to endpoints."
+                " Specify 'any' (default) to return all endpoints that the user"
+                " can submit tasks to. Specify 'owner' to only return endpoints"
+                " that the user owns."
+            ),
+        ),
+    ],
+) -> list[ComputeEndpoint]:
+    """List Globus Compute endpoints that the user has access to."""
     gcc = get_compute_client()
 
     try:
-        r = gcc.get_endpoints()
+        r = gcc.get_endpoints(role=role)
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Failed to get endpoints: {e}")
 
