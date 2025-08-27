@@ -69,7 +69,7 @@ def create_index(
         data["description"] = description
 
     try:
-        r = handle_gare(sc.create_index, data)
+        r = sc.create_index(**data)
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Failed to create index: {e}")
 
