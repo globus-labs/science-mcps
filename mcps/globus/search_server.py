@@ -26,23 +26,6 @@ def get_search_client():
     return globus_sdk.SearchClient(app=app, app_scopes=scopes.all)
 
 
-def handle_gare(
-    client_method: Callable[..., globus_sdk.GlobusHTTPResponse],
-    *args,
-    **kwargs,
-) -> globus_sdk.GlobusHTTPResponse:
-    client: globus_sdk.SearchClient = client_method.__self__
-    try:
-        return client_method(*args, **kwargs)
-    except globus_sdk.GlobusAPIError as e:
-        if e.http_status == 403 and e.code == "ConsentRequired":
-            scopes = e.info.consent_required.required_scopes
-            for scope in scopes:
-                client.add_app_scope(scope)
-            return client_method(*args, **kwargs)
-        raise
-
-
 def _format_search_response(res: globus_sdk.GlobusHTTPResponse) -> SearchResult:
     data = res.data
     return SearchResult(
@@ -99,7 +82,7 @@ def list_my_indices() -> list[SearchIndex]:
     sc = get_search_client()
 
     try:
-        r = handle_gare(sc.index_list)
+        r = sc.index_list()
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Failed to list indices: {e}")
 
@@ -114,7 +97,7 @@ def get_index_info(
     sc = get_search_client()
 
     try:
-        r = handle_gare(sc.get_index, index_id)
+        r = sc.get_index(index_id)
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Failed to get index info: {e}")
 
@@ -138,7 +121,7 @@ def delete_index(
     sc = get_search_client()
 
     try:
-        handle_gare(sc.delete_index, index_id)
+        sc.delete_index(index_id)
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Failed to delete index: {e}")
 
@@ -168,7 +151,7 @@ def ingest_document(
     }
 
     try:
-        r = handle_gare(sc.ingest, index_id, gmeta_doc)
+        r = sc.ingest(index_id, gmeta_doc)
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Failed to ingest document: {e}")
 
@@ -203,7 +186,7 @@ def ingest_documents(
         gmeta_docs.append(gmeta_doc)
 
     try:
-        r = handle_gare(sc.ingest, index_id, gmeta_docs)
+        r = sc.ingest(index_id, gmeta_docs)
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Failed to ingest documents: {e}")
 
@@ -218,7 +201,7 @@ def get_ingestion_status(
     sc = get_search_client()
 
     try:
-        r = handle_gare(sc.get_task, task_id)
+        r = sc.get_task(task_id)
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Failed to get task status: {e}")
 
@@ -239,7 +222,7 @@ def delete_subject(
     sc = get_search_client()
 
     try:
-        handle_gare(sc.delete_subject, index_id, subject)
+        sc.delete_subject(index_id, subject)
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Failed to delete subject: {e}")
 
@@ -257,7 +240,7 @@ def search_index(
     sc = get_search_client()
 
     try:
-        r = handle_gare(sc.search, index_id, q=query, limit=limit, offset=offset)
+        r = sc.search(index_id, q=query, limit=limit, offset=offset)
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Search failed: {e}")
 
@@ -276,7 +259,7 @@ def advanced_search(
     sc = get_search_client()
 
     try:
-        r = handle_gare(sc.post_search, index_id, search_params)
+        r = sc.post_search(index_id, search_params)
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Advanced search failed: {e}")
 
@@ -292,7 +275,7 @@ def get_subject(
     sc = get_search_client()
 
     try:
-        r = handle_gare(sc.get_subject, index_id, subject)
+        r = sc.get_subject(index_id, subject)
     except globus_sdk.GlobusAPIError as e:
         raise ToolError(f"Failed to get subject: {e}")
 
