@@ -22,9 +22,8 @@ mcp = FastMCP("Globus Search MCP Server")
 
 def get_search_client():
     app = get_globus_app()
-    search_scope = globus_sdk.scopes.SearchScopes.all
-    app.add_scope_requirements({'search.api.globus.org': search_scope})
-    return globus_sdk.SearchClient(app=app)
+    scopes = globus_sdk.scopes.SearchScopes
+    return globus_sdk.SearchClient(app=app, app_scopes=scopes.all)
 
 
 def handle_gare(
@@ -96,7 +95,7 @@ def create_index(
 
 @mcp.tool
 def list_my_indices() -> list[SearchIndex]:
-    """List search indices that the user has access to."""
+    """List Globus Search indices that the user has access to."""
     sc = get_search_client()
 
     try:
@@ -111,7 +110,7 @@ def list_my_indices() -> list[SearchIndex]:
 def get_index_info(
     index_id: Annotated[str, Field(description="ID of the search index")],
 ) -> SearchIndex:
-    """Get detailed information about a specific search index."""
+    """Get detailed information about a specific Globus Search index."""
     sc = get_search_client()
 
     try:
@@ -135,7 +134,7 @@ def get_index_info(
 def delete_index(
     index_id: Annotated[str, Field(description="ID of the search index to delete")],
 ) -> Dict[str, str]:
-    """Delete a search index. Only the index owner can delete an index."""
+    """Delete a Globus Search index. Only the index owner can delete an index."""
     sc = get_search_client()
 
     try:
@@ -236,7 +235,7 @@ def delete_subject(
     index_id: Annotated[str, Field(description="ID of the search index")],
     subject: Annotated[str, Field(description="Subject identifier to delete")],
 ) -> Dict[str, str]:
-    """Delete a subject and all its entries from a search index."""
+    """Delete a subject and all its entries from a Globus Search index."""
     sc = get_search_client()
 
     try:
@@ -289,7 +288,7 @@ def get_subject(
     index_id: Annotated[str, Field(description="ID of the search index")],
     subject: Annotated[str, Field(description="Subject identifier to retrieve")],
 ) -> Dict[str, Any]:
-    """Get detailed information about a specific subject in a search index."""
+    """Get detailed information about a specific subject in a Globus Search index."""
     sc = get_search_client()
 
     try:
