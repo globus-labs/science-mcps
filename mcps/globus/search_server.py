@@ -56,7 +56,9 @@ def _format_index_list_response(
 
 @mcp.tool
 def create_index(
-    display_name: Annotated[str, Field(description="Display name for the search index")],
+    display_name: Annotated[
+        str, Field(description="Display name for the search index")
+    ],
     description: Annotated[
         str, Field(description="Description of the search index", default="")
     ],
@@ -131,11 +133,18 @@ def delete_index(
 @mcp.tool
 def ingest_document(
     index_id: Annotated[str, Field(description="ID of the search index")],
-    subject: Annotated[str, Field(description="Unique subject identifier for the document")],
-    content: Annotated[Dict[str, Any], Field(description="Document content as a JSON object")],
+    subject: Annotated[
+        str, Field(description="Unique subject identifier for the document")
+    ],
+    content: Annotated[
+        Dict[str, Any], Field(description="Document content as a JSON object")
+    ],
     visible_to: Annotated[
-        list[str], 
-        Field(description="List of principals who can see this document", default=["public"])
+        list[str],
+        Field(
+            description="List of principals who can see this document",
+            default=["public"],
+        ),
     ],
 ) -> SearchIngestResponse:
     """Ingest a single document into a Globus Search index."""
@@ -147,7 +156,7 @@ def ingest_document(
             "subject": subject,
             "visible_to": visible_to,
             "content": content,
-        }
+        },
     }
 
     try:
@@ -162,8 +171,10 @@ def ingest_document(
 def ingest_documents(
     index_id: Annotated[str, Field(description="ID of the search index")],
     documents: Annotated[
-        list[Dict[str, Any]], 
-        Field(description="List of documents to ingest. Each document must have 'subject', 'content', and optionally 'visible_to' fields")
+        list[Dict[str, Any]],
+        Field(
+            description="List of documents to ingest. Each document must have 'subject', 'content', and optionally 'visible_to' fields"
+        ),
     ],
 ) -> SearchIngestResponse:
     """Ingest multiple documents into a Globus Search index."""
@@ -173,7 +184,7 @@ def ingest_documents(
     for doc in documents:
         if "subject" not in doc or "content" not in doc:
             raise ToolError("Each document must have 'subject' and 'content' fields")
-        
+
         visible_to = doc.get("visible_to", ["public"])
         gmeta_doc = {
             "ingest_type": "GMetaEntry",
@@ -181,7 +192,7 @@ def ingest_documents(
                 "subject": doc["subject"],
                 "visible_to": visible_to,
                 "content": doc["content"],
-            }
+            },
         }
         gmeta_docs.append(gmeta_doc)
 
@@ -233,8 +244,12 @@ def delete_subject(
 def search_index(
     index_id: Annotated[str, Field(description="ID of the search index")],
     query: Annotated[str, Field(description="Search query string")],
-    limit: Annotated[int, Field(description="Maximum number of results to return", default=10)],
-    offset: Annotated[int, Field(description="Number of results to skip for pagination", default=0)],
+    limit: Annotated[
+        int, Field(description="Maximum number of results to return", default=10)
+    ],
+    offset: Annotated[
+        int, Field(description="Number of results to skip for pagination", default=0)
+    ],
 ) -> SearchResult:
     """Search for documents in a Globus Search index using a simple query string."""
     sc = get_search_client()
@@ -251,8 +266,10 @@ def search_index(
 def advanced_search(
     index_id: Annotated[str, Field(description="ID of the search index")],
     search_params: Annotated[
-        Dict[str, Any], 
-        Field(description="Advanced search parameters including query, filters, facets, sorting")
+        Dict[str, Any],
+        Field(
+            description="Advanced search parameters including query, filters, facets, sorting"
+        ),
     ],
 ) -> SearchResult:
     """Perform an advanced search with complex filters, facets, and sorting."""
