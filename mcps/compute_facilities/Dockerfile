@@ -8,8 +8,7 @@ EXPOSE 8000/tcp
 
 WORKDIR /science-mcps/mcps/compute_facilities
 
-COPY mcps/compute_facilities/alcf_server.py alcf_server.py
-COPY mcps/compute_facilities/nersc_server.py nersc_server.py
+COPY mcps/compute_facilities/facility_server.py facility_server.py
 COPY mcps/compute_facilities/requirements.txt requirements.txt
 
 RUN conda create -y -n science-mcps python=3.11 && \
