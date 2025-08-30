@@ -5,10 +5,8 @@ pip install pytest pytest-asyncio aresponses mypy ruff pre-commit
 
 ## Testing Locally without Docker
 ```bash
-# NERSC Status
-cd mcps/compute_facilities && python alcf_server.py
-# ALCF Status
-python nersc_server.py
+# Compute facilities
+cd mcps/compute_facilities && python facility_server.py
 
 # Diaspora
 cd mcps/diaspora && python diaspora_server.py
@@ -39,10 +37,8 @@ docker build --platform=linux/amd64 -t science-mcps-globus-image -f mcps/globus/
 2. **Run**
 
 ```bash
-# ALCF Status
-docker run --rm -p 8000:8000 -e SERVER_NAME=alcf  science-mcps-facility-image
-# NERSC Status
-docker run --rm -p 8000:8000 -e SERVER_NAME=nersc science-mcps-facility-image
+# Facility Status
+docker run --rm -p 8000:8000 -e SERVER_NAME=facility  science-mcps-facility-image
 
 # Diaspora (needs AWS_ACCESS_KEY_ID and AWS_SECRET_ACCESS_KEY that are able to assume IAM user roles)
 docker run --rm -p 8000:8000 -e SERVER_NAME=diaspora -e DIASPORA_AWS_ACCESS_KEY_ID=... -e DIASPORA_AWS_SECRET_ACCESS_KEY=... -e DIASPORA_AWS_DEFAULT_REGION=us-east-1 science-mcps-diaspora-image
@@ -63,7 +59,7 @@ http://localhost:6274/?MCP_PROXY_AUTH_TOKEN=...
 ```
 
 * **Transport Type:** Streamable HTTP
-* **URL:** `http://0.0.0.0:8000/mcps/globus-transfer` (or `…/globus-compute`,   `…/alcf-status`,  `…/nersc-status`)
+* **URL:** `http://0.0.0.0:8000/mcp`
 
 ## Locally use Claude or other AI agents to test
 
