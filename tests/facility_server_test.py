@@ -105,7 +105,7 @@ async def test_get_alcf_status():
     async with Client(facility_server.mcp) as client:
         result = await client.call_tool("get_alcf_status")
         # Check that it returns a dictionary-like structure
-        assert "is_running" in result.data
+        assert "is_operational" in result.data
         assert "motd_info" in result.data
         assert "maintenance_info" in result.data
         assert "job_counts" in result.data

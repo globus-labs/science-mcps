@@ -197,18 +197,18 @@ async def get_alcf_status() -> dict[str, Any]:
 
     status_response = await _get_alcf_status()
 
-    # Determine system running status
-    is_running = True
+    # Determine system operational status
+    is_operational = True
     if status_response.maint:
-        is_running = False
+        is_operational = False
     elif status_response.motd_info:
         for motd in status_response.motd_info:
             if motd.type == "MAINT":
-                is_running = False
+                is_operational = False
                 break
 
     result = {
-        "is_running": is_running,
+        "is_operational": is_operational,
         "motd_info": status_response.motd_info,
         "maintenance_info": {
             "start": status_response.start,
