@@ -45,16 +45,16 @@ To add the unified facility MCP server to Claude Desktop:
 2. Go to Settings (gear icon)
 3. Navigate to the "MCP Servers" section
 4. Click "Add Server"
-5. Configure the server as follows:
+5. Configure the server as follows (module invocation recommended).
 
-Edit the claude_desktop_config.json file at `~/Library/Application\ Support/Claude/claude_desktop_config.json`. Make sure you correct the path information:
+Edit the claude_desktop_config.json file at `~/Library/Application\ Support/Claude/claude_desktop_config.json`:
 
 ```json
 {
   "mcpServers": {
     "facility-mcp": {
       "command": "/path/to/your/env/python",
-      "args": ["/path/to/science-mcps/mcps/compute_facilities/facility_server.py"]
+      "args": ["-m", "mcps.compute_facilities.facility_server"]
     }
   }
 }
@@ -90,16 +90,51 @@ Give me a summary of all NERSC systems.
 
 ### ALCF Tools
 
-- `get_alcf_status` - Get comprehensive ALCF Polaris status including system availability, maintenance info, and job counts
-- `get_alcf_running_tasks` - Retrieve running jobs with pagination support (n, skip parameters)
-- `get_alcf_starting_tasks` - Retrieve starting jobs with pagination support
-- `get_alcf_queued_tasks` - Retrieve queued jobs with pagination support
-- `get_alcf_reservation_tasks` - Retrieve reservation jobs with pagination support
+- `get_alcf_status(resource: str = "polaris")` — Summarized ALCF status for a resource (`polaris` or `aurora`), including maintenance and job counts.
+- `get_alcf_tasks(kind, n=10, skip=0, resource: str = "polaris")` — Paginated ALCF jobs for a queue.
+  - `kind` must be one of: `running`, `starting`, `queued`, `reservation`.
+  - `resource` examples: `polaris`, `aurora`.
 
 ### NERSC Tools
 
-- `get_nersc_status` - Get a summary of all NERSC systems with their current status
-- `get_nersc_system_status` - Get detailed status for a specific NERSC system (case-insensitive name matching)
+- `get_nersc_status()` — Returns the full API model with `systems` (list of NERSC systems).
+- `get_nersc_system_status(system_name: str)` — Returns one NERSC system by name (case-insensitive).
+
+## Examples
+
+### ALCF
+
+- Polaris: first 10 running jobs
+  - Tool: `get_alcf_tasks`
+  - Args: `{ "kind": "running", "resource": "polaris", "n": 10, "skip": 0 }`
+
+- Polaris: first 10 starting, queued, reservation jobs
+  - Starting: `{ "kind": "starting", "resource": "polaris", "n": 10, "skip": 0 }`
+  - Queued: `{ "kind": "queued", "resource": "polaris", "n": 10, "skip": 0 }`
+  - Reservation: `{ "kind": "reservation", "resource": "polaris", "n": 10, "skip": 0 }`
+
+- Aurora: first 10 running, starting, queued, reservation jobs
+  - Running: `{ "kind": "running", "resource": "aurora", "n": 10, "skip": 0 }`
+  - Starting: `{ "kind": "starting", "resource": "aurora", "n": 10, "skip": 0 }`
+  - Queued: `{ "kind": "queued", "resource": "aurora", "n": 10, "skip": 0 }`
+  - Reservation: `{ "kind": "reservation", "resource": "aurora", "n": 10, "skip": 0 }`
+
+- ALCF status summary (Polaris)
+  - Tool: `get_alcf_status`
+  - Args: `{ "resource": "polaris" }`
+
+- ALCF status summary (Aurora)
+  - Tool: `get_alcf_status`
+  - Args: `{ "resource": "aurora" }`
+
+### NERSC
+
+- List all systems
+  - Tool: `get_nersc_status`
+
+- Specific system by name
+  - Tool: `get_nersc_system_status`
+  - Args: `{ "system_name": "perlmutter" }`
 
 
 ## Testing
